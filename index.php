@@ -1,0 +1,528 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/imageLibrary.php';
+
+function formatLibraryBytes(int $bytes): string
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $size = max(0, $bytes);
+    $index = 0;
+
+    while ($size >= 1024 && $index < count($units) - 1) {
+        $size /= 1024;
+        $index++;
+    }
+
+    return sprintf($index === 0 ? '%d %s' : '%.2f %s', $size, $units[$index]);
+}
+
+$librarySummary = getLibrarySummary();
+$libraryTotalCount = (int)($librarySummary['total_count'] ?? 0);
+$libraryTotalBytes = (int)($librarySummary['total_bytes'] ?? 0);
+
+$siteUrl = getConfiguredSiteBaseUrl();
+$supportsAvifOutput = supportsOutputFormat('avif');
+?>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>img.et 图得 - 动态占位图与随机图片服务</title>
+  <meta name="description" content="img.et 提供按尺寸、分类、固定参数生成图片的服务，支持 WebP<?= $supportsAvifOutput ? ' 和 AVIF' : '' ?> 输出，适合文章头图、卡片位和占位图场景。">
+  <meta name="keywords" content="img.et,随机图片,占位图,动态图片,图片裁剪,WebP<?= $supportsAvifOutput ? ',AVIF' : '' ?>,文章头图,卡片配图">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="<?= $siteUrl ?>/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="img.et 图得">
+  <meta property="og:title" content="img.et 图得 - 动态占位图与随机图片服务">
+  <meta property="og:description" content="支持尺寸裁剪、分类取图、固定参数和 WebP<?= $supportsAvifOutput ? ' / AVIF' : '' ?> 输出，一条链接直接返回图片。">
+  <meta property="og:url" content="<?= $siteUrl ?>/">
+  <meta property="og:image" content="<?= $siteUrl ?>/assets/logo.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="img.et 图得 - 动态占位图与随机图片服务">
+  <meta name="twitter:description" content="支持尺寸裁剪、分类取图、固定参数和 WebP<?= $supportsAvifOutput ? ' / AVIF' : '' ?> 输出，一条链接直接返回图片。">
+  <meta name="twitter:image" content="<?= $siteUrl ?>/assets/logo.png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.bluecdn.com">
+  <link rel="stylesheet" href="https://fonts.bluecdn.com/css2?family=Google+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://icons.bluecdn.com/fontawesome-pro/css/all.min.css">
+  <script defer src="https://tongji.giantaccel.com/script.js" data-website-id="dfe72df0-719f-4ad2-af39-cfea2465dd44"></script>
+  <link rel="stylesheet" href="/assets/main.min.css?v=a0737c5b">
+
+</head>
+<body class="page-home">
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="hero-brand">
+          <a class="brand-wordmark" href="/" aria-label="img.et 首页">
+            <span class="sr-only">img.et</span>
+          </a>
+        </div>
+        <div class="hero-badges" aria-label="核心功能">
+          <span class="hero-badge size"><i class="fa-light fa-crop" aria-hidden="true"></i> 支持尺寸裁剪</span>
+          <span class="hero-badge type"><i class="fa-light fa-grid-2" aria-hidden="true"></i> 支持分类取图</span>
+          <span class="hero-badge fixed"><i class="fa-light fa-thumbtack" aria-hidden="true"></i> 支持固定参数取图</span>
+          <span class="hero-badge format"><i class="fa-light fa-image" aria-hidden="true"></i> 支持 WebP<?= $supportsAvifOutput ? ' / AVIF' : '' ?></span>
+          <span class="hero-badge cdn"><i class="fa-light fa-globe" aria-hidden="true"></i> 全球 CDN 加速</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>使用方式</h2>
+      <p>直接在域名 <code>img.et</code> 后写上尺寸即可使用，默认会直接返回图片文件。你可以追加 <code>type</code>、<code>r</code>、<code>s</code>、<code>format</code> 来控制图片类型、固定规则、多图位置和输出格式。</p>
+      <div class="summary-bar">
+        <span><strong>基础格式</strong><code>/宽/高</code></span>
+        <span><strong>固定参数</strong><code>r</code></span>
+        <span><strong>类型参数</strong><code>type</code></span>
+        <span><strong>多图参数</strong><code>s</code></span>
+        <span><strong>格式参数</strong><code>format</code></span>
+      </div>
+      <h3>在线生成地址</h3>
+      <p>直接输入尺寸并选择类型、格式和方式，系统会实时生成可访问地址。你可以用它快速组合“随机图”“分类图”“固定图”或“固定分类图”等常见用法，不需要手动拼接参数。</p>
+      <div class="tester-grid">
+        <div class="tester-field">
+          <label for="tester-width">宽度</label>
+          <input id="tester-width" type="number" min="1" step="1" value="1920">
+        </div>
+        <div class="tester-field">
+          <label for="tester-height">高度</label>
+          <input id="tester-height" type="number" min="1" step="1" value="1080">
+        </div>
+        <div class="tester-field">
+          <label for="tester-type">类型</label>
+          <select id="tester-type">
+            <option value="">默认</option>
+            <option value="banner">banner 通用横幅</option>
+            <option value="landscape">landscape 风景山水</option>
+            <option value="beauty">beauty 人物人像</option>
+            <option value="anime">anime 动漫插画</option>
+            <option value="city">city 城市建筑</option>
+            <option value="nature">nature 森林海洋</option>
+            <option value="car">car 汽车机车</option>
+            <option value="game">game 游戏电竞</option>
+            <option value="food">food 美食甜点</option>
+            <option value="animal">animal 动物萌宠</option>
+            <option value="travel">travel 旅行度假</option>
+            <option value="space">space 星空宇宙</option>
+            <option value="tech">tech 科技数码</option>
+            <option value="business">business 商务办公</option>
+            <option value="sports">sports 运动健身</option>
+            <option value="architecture">architecture 建筑室内</option>
+          </select>
+        </div>
+        <div class="tester-field">
+          <label for="tester-format">格式</label>
+          <select id="tester-format">
+            <option value="">webp（默认）</option>
+            <?php if ($supportsAvifOutput): ?>
+              <option value="avif">avif</option>
+            <?php endif; ?>
+          </select>
+        </div>
+        <div class="tester-field">
+          <label for="tester-mode">方式</label>
+          <select id="tester-mode">
+            <option value="random">随机</option>
+            <option value="fixed">固定 r</option>
+          </select>
+        </div>
+        <div class="tester-field tester-r-field" id="tester-r-field" hidden>
+          <label for="tester-r">r 值</label>
+          <div class="tester-input-wrap">
+            <input id="tester-r" type="text" value="749630" placeholder="例如 749630" inputmode="numeric">
+            <button class="tester-dice-btn" id="tester-randomize-r" type="button" aria-label="随机生成 r 值" title="随机生成 r 值">
+              <i class="fa-light fa-dice-five" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <div class="tester-field">
+          <label for="tester-slot">s 值</label>
+          <input id="tester-slot" type="text" placeholder="可选，例如 1">
+        </div>
+      </div>
+      <div class="tester-actions">
+        <div class="tester-url" id="tester-url">https://img.et/1920/1080</div>
+        <div class="tester-buttons">
+          <button class="action-btn secondary" id="tester-copy" type="button">复制地址</button>
+          <a class="action-btn" id="tester-open" href="https://img.et/1920/1080" target="_blank" rel="noopener noreferrer">访问测试</a>
+        </div>
+      </div>
+      <div class="warn">选择“随机”时不附加 <code>r</code>；选择“固定 r”时使用你输入的 <code>r</code> 值。访问过的尺寸与分类组合会被系统记录，供后续自动补图使用。</div>
+      <div class="code-card">
+        <div class="code-head">
+          <span>同一页面固定多张图</span>
+          <button class="copy-btn" data-copy-target="mode-slot" type="button" aria-label="复制多图固定示例">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="9" y="9" width="10" height="10"></rect>
+              <path d="M5 15V5h10"></path>
+            </svg>
+          </button>
+        </div>
+        <pre id="mode-slot"><code>https://img.et/1200/600?r=749630&s=1&type=banner
+https://img.et/1200/600?r=749630&s=2&type=banner
+https://img.et/1200/600?r=749630&s=3&type=banner</code></pre>
+      </div>
+      <div class="warn">同一个 <code>r</code> 代表同一篇文章或页面；不同的 <code>s</code> 代表不同图片位。固定图会尽量命中同一张本地图片，适合文章头图、卡片位与多图模块。</div>
+      <h3>代码引用</h3>
+      <p>你可以在任何网页、博客、文档中通过短链直接引用图片。以下是常见场景的代码示例：</p>
+      <div class="code-card">
+        <div class="code-head">
+          <span>HTML — 随机头图</span>
+          <button class="copy-btn" data-copy-target="ref-html" type="button" aria-label="复制 HTML 示例">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="9" y="9" width="10" height="10"></rect>
+              <path d="M5 15V5h10"></path>
+            </svg>
+          </button>
+        </div>
+        <pre id="ref-html"><code><span class="hl-cmt">&lt;!-- 每次刷新显示不同随机图 --&gt;</span>
+<span class="hl-tag">&lt;img</span> <span class="hl-attr">src</span>=<span class="hl-str">"https://img.et/1920/1080"</span> <span class="hl-attr">alt</span>=<span class="hl-str">"随机图"</span><span class="hl-tag">&gt;</span>
+
+<span class="hl-cmt">&lt;!-- 指定风景分类 --&gt;</span>
+<span class="hl-tag">&lt;img</span> <span class="hl-attr">src</span>=<span class="hl-str">"https://img.et/1920/1080?type=landscape"</span> <span class="hl-attr">alt</span>=<span class="hl-str">"风景图"</span><span class="hl-tag">&gt;</span>
+
+<span class="hl-cmt">&lt;!-- 固定显示同一张图（r 值相同 = 同一张图） --&gt;</span>
+<span class="hl-tag">&lt;img</span> <span class="hl-attr">src</span>=<span class="hl-str">"https://img.et/1920/1080?r=749630"</span> <span class="hl-attr">alt</span>=<span class="hl-str">"固定图"</span><span class="hl-tag">&gt;</span></code></pre>
+      </div>
+      <div class="code-card">
+        <div class="code-head">
+          <span>Markdown — 文章配图</span>
+          <button class="copy-btn" data-copy-target="ref-md" type="button" aria-label="复制 Markdown 示例">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="9" y="9" width="10" height="10"></rect>
+              <path d="M5 15V5h10"></path>
+            </svg>
+          </button>
+        </div>
+        <pre id="ref-md"><code>![随机头图](https://img.et/1920/1080)
+![风景配图](https://img.et/800/400?type=landscape)</code></pre>
+      </div>
+      <div class="code-card">
+        <div class="code-head">
+          <span>CSS — 背景图</span>
+          <button class="copy-btn" data-copy-target="ref-css" type="button" aria-label="复制 CSS 示例">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="9" y="9" width="10" height="10"></rect>
+              <path d="M5 15V5h10"></path>
+            </svg>
+          </button>
+        </div>
+        <pre id="ref-css"><code><span class="hl-sel">.hero-banner</span> {
+  <span class="hl-prop">background-image</span>: <span class="hl-fn">url</span>(<span class="hl-str">"https://img.et/1920/1080?type=landscape"</span>);
+  <span class="hl-prop">background-size</span>: <span class="hl-val">cover</span>;
+  <span class="hl-prop">background-position</span>: <span class="hl-val">center</span>;
+}</code></pre>
+      </div>
+      <div class="warn">短链格式为 <code>https://img.et/宽/高</code>，默认直接返回图片文件，适合 <code>&lt;img&gt;</code>、CSS 背景和 API 调用。如需打开预览详情页，可追加 <code>preview=1</code>。</div>
+      <h3>格式</h3>
+      <p>当前服务器支持的输出格式为 <code>webp</code><?php if ($supportsAvifOutput): ?> 和 <code>avif</code><?php endif; ?>。所有格式都由当前域名直接输出。</p>
+      <div class="code-card">
+        <div class="code-head">
+          <span>格式示例</span>
+          <button class="copy-btn" data-copy-target="mode-format" type="button" aria-label="复制格式示例">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="9" y="9" width="10" height="10"></rect>
+              <path d="M5 15V5h10"></path>
+            </svg>
+          </button>
+        </div>
+        <pre id="mode-format"><code>https://img.et/1920/1080?type=landscape&format=webp<?= $supportsAvifOutput ? "\nhttps://img.et/1920/1080?type=landscape&format=avif" : '' ?></code></pre>
+      </div>
+      <p class="muted"><code>webp</code> 兼容性更稳，适合作为默认输出格式；<?php if ($supportsAvifOutput): ?><code>avif</code> 压缩效率更高，通常能在保持画质的同时进一步减小体积，适合对带宽和加载速度更敏感的场景。<?php else: ?>当前服务器暂未启用 <code>avif</code> 输出，因此默认使用 <code>webp</code>。<?php endif; ?></p>
+      <h3>类型</h3>
+      <p>支持通过 <code>type</code> 参数按分类输出图片，也支持按你的业务场景自定义更多类型图片输出。下面这些是常见示例类型，方便你快速选择和使用：</p>
+      <div class="type-grid">
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-panorama"></i></span>
+          <div class="type-copy"><strong>banner</strong><p>通用横幅、默认头图</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-mountains"></i></span>
+          <div class="type-copy"><strong>landscape</strong><p>风景、山水、自然场景</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-sparkles"></i></span>
+          <div class="type-copy"><strong>beauty</strong><p>人物、人像、美图</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-stars"></i></span>
+          <div class="type-copy"><strong>anime</strong><p>动漫、插画、二次元</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-city"></i></span>
+          <div class="type-copy"><strong>city</strong><p>城市、建筑、街景</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-leaf-maple"></i></span>
+          <div class="type-copy"><strong>nature</strong><p>森林、海洋、天空、植物</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-car-side"></i></span>
+          <div class="type-copy"><strong>car</strong><p>汽车、机车、赛道</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-gamepad-modern"></i></span>
+          <div class="type-copy"><strong>game</strong><p>游戏、电竞、虚拟场景</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-burger-soda"></i></span>
+          <div class="type-copy"><strong>food</strong><p>美食、甜点、饮品</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-paw-simple"></i></span>
+          <div class="type-copy"><strong>animal</strong><p>动物、萌宠、野生生态</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-plane-departure"></i></span>
+          <div class="type-copy"><strong>travel</strong><p>旅行、目的地、度假氛围</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-galaxy"></i></span>
+          <div class="type-copy"><strong>space</strong><p>星空、宇宙、科幻主题</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-microchip-ai"></i></span>
+          <div class="type-copy"><strong>tech</strong><p>科技、数码、未来感</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-briefcase"></i></span>
+          <div class="type-copy"><strong>business</strong><p>商务、办公、团队场景</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-volleyball"></i></span>
+          <div class="type-copy"><strong>sports</strong><p>运动、健身、赛事画面</p></div>
+        </div>
+        <div class="type-card">
+          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-building"></i></span>
+          <div class="type-copy"><strong>architecture</strong><p>建筑、室内、空间设计</p></div>
+        </div>
+      </div>
+      <div class="warn">首次访问时，系统会优先从现有图片池中直接返回结果，以获得更快的加载速度。对于新的尺寸与分类组合，系统会自动完成登记与预热：首次请求默认补充 5 张，后续每次访问再补充 1 张；同时系统会按天持续更新，每日新增 10 张，单个分类最多支持维护 1000 张图片。</div>
+    </section>
+
+    <section class="section">
+      <h2>示例图片</h2>
+      <div class="sample-grid">
+        <article class="sample-card">
+          <div class="sample-media">
+            <img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://img.et/1920/1080" alt="随机图" loading="lazy" decoding="async">
+          </div>
+          <div class="sample-body">
+            <h3>随机图</h3>
+            <div class="code-card">
+              <div class="code-head">
+                <span>示例链接</span>
+                <button class="copy-btn" data-copy-target="sample-1" type="button" aria-label="复制示例 1">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="9" y="9" width="10" height="10"></rect>
+                    <path d="M5 15V5h10"></path>
+                  </svg>
+                </button>
+              </div>
+              <pre id="sample-1"><code>https://img.et/1920/1080</code></pre>
+            </div>
+          </div>
+        </article>
+
+        <article class="sample-card">
+          <div class="sample-media">
+            <img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://img.et/1920/1080?type=landscape" alt="指定类型随机图" loading="lazy" decoding="async">
+          </div>
+          <div class="sample-body">
+            <h3>指定类型随机图</h3>
+            <div class="code-card">
+              <div class="code-head">
+                <span>示例链接</span>
+                <button class="copy-btn" data-copy-target="sample-2" type="button" aria-label="复制示例 2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="9" y="9" width="10" height="10"></rect>
+                    <path d="M5 15V5h10"></path>
+                  </svg>
+                </button>
+              </div>
+              <pre id="sample-2"><code>https://img.et/1920/1080?type=landscape</code></pre>
+            </div>
+          </div>
+        </article>
+
+        <article class="sample-card">
+          <div class="sample-media">
+            <img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://img.et/1920/1080?r=749630" alt="固定图" loading="lazy" decoding="async">
+          </div>
+          <div class="sample-body">
+            <h3>固定图</h3>
+            <div class="code-card">
+              <div class="code-head">
+                <span>示例链接</span>
+                <button class="copy-btn" data-copy-target="sample-3" type="button" aria-label="复制示例 3">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="9" y="9" width="10" height="10"></rect>
+                    <path d="M5 15V5h10"></path>
+                  </svg>
+                </button>
+              </div>
+              <pre id="sample-3"><code>https://img.et/1920/1080?r=749630</code></pre>
+            </div>
+          </div>
+        </article>
+
+        <article class="sample-card">
+          <div class="sample-media">
+            <img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://img.et/1920/1080?type=beauty&r=749630" alt="固定类型图" loading="lazy" decoding="async">
+          </div>
+          <div class="sample-body">
+            <h3>固定类型图</h3>
+            <div class="code-card">
+              <div class="code-head">
+                <span>示例链接</span>
+                <button class="copy-btn" data-copy-target="sample-4" type="button" aria-label="复制示例 4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="9" y="9" width="10" height="10"></rect>
+                    <path d="M5 15V5h10"></path>
+                  </svg>
+                </button>
+              </div>
+              <pre id="sample-4"><code>https://img.et/1920/1080?type=beauty&r=749630</code></pre>
+            </div>
+          </div>
+        </article>
+
+        <?php if ($supportsAvifOutput): ?>
+          <article class="sample-card">
+            <div class="sample-media">
+              <img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://img.et/1920/1080?type=landscape&format=avif" alt="AVIF 图" loading="lazy" decoding="async">
+            </div>
+            <div class="sample-body">
+              <h3>AVIF 输出</h3>
+              <div class="code-card">
+                <div class="code-head">
+                  <span>示例链接</span>
+                  <button class="copy-btn" data-copy-target="sample-5" type="button" aria-label="复制示例 5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="9" y="9" width="10" height="10"></rect>
+                      <path d="M5 15V5h10"></path>
+                    </svg>
+                  </button>
+                </div>
+                <pre id="sample-5"><code>https://img.et/1920/1080?type=landscape&format=avif</code></pre>
+              </div>
+            </div>
+          </article>
+        <?php endif; ?>
+
+        <article class="sample-card">
+          <div class="sample-media">
+            <img class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-src="https://img.et/1920/1080?type=landscape&format=webp" alt="WebP 图" loading="lazy" decoding="async">
+          </div>
+          <div class="sample-body">
+            <h3>WebP 输出</h3>
+            <div class="code-card">
+              <div class="code-head">
+                <span>示例链接</span>
+                <button class="copy-btn" data-copy-target="sample-6" type="button" aria-label="复制示例 6">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="9" y="9" width="10" height="10"></rect>
+                    <path d="M5 15V5h10"></path>
+                  </svg>
+                </button>
+              </div>
+              <pre id="sample-6"><code>https://img.et/1920/1080?type=landscape&format=webp</code></pre>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>版权说明</h2>
+      <p><strong>页面文案版权：</strong>本页面中的文字说明、界面设计与站点说明内容，版权归 <strong>img.et 图得</strong> 所有，年份为 2026。</p>
+      <p><strong>图片权利归属：</strong>通过 <strong>img.et 图得</strong> 访问到的图片，并不归本站所有。相关图片的著作权、肖像权、商标权及其他权利，通常归原始作者、原始上传者、来源平台或其合法权利人所有。当前图片可能来自 <code>Picsum</code>、<code>Pixabay</code>、<code>Unsplash</code>、<code>Pexels</code>、<code>Openverse</code> 或其他网络来源，具体权利归属应以对应来源页面、来源平台条款及原作者声明为准。</p>
+      <p><strong>服务性质：</strong><strong>img.et 图得</strong> 提供的是图片调用、尺寸生成与格式转换服务，不构成对第三方图片权利的转让、授权、背书或保证。用户在使用、展示、下载、转载或再次分发图片前，应自行确认相关授权范围及适用条件。</p>
+      <table>
+        <tr><th>使用场景</th><th>建议</th></tr>
+        <tr><td>普通文章配图、站点横幅</td><td>建议保留图片来源记录，并确认来源平台允许该类展示用途。</td></tr>
+        <tr><td>商业页面、客户项目、广告页面</td><td>请单独核对商业授权、人物肖像、品牌标识与广告投放限制。</td></tr>
+        <tr><td>人物、动漫、插画类图片</td><td>请重点确认人物权利、作品授权、二次创作规则及商业适用范围。</td></tr>
+        <tr><td>原图下载与再次分发</td><td>请先核对来源平台条款；除非来源明确允许，否则不应视为可自由再分发素材。</td></tr>
+      </table>
+      <div class="warn">使用本服务即表示你理解并同意：图片相关权利不因经过本服务处理而发生转移；若使用行为涉及版权、肖像、商标、隐私、平台规范或当地法律问题，应以原始来源条款和适用法律为准。版权处理请发送邮件至 <a class="email-link" href="mailto:dmca@img.et"><i class="fa-light fa-envelope" aria-hidden="true"></i><span>dmca@img.et</span></a>，并附上页面地址、相关说明与权利证明。</div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-copy">
+          <p class="footer-copyright">Copyright © 2026 img.et 图得. All rights reserved.</p>
+        </div>
+        <div class="footer-stats" aria-label="图库统计">
+          <span class="footer-stat"><strong><?= number_format($libraryTotalCount) ?></strong><span>张图片</span></span>
+          <span class="footer-stat"><strong><?= formatLibraryBytes($libraryTotalBytes) ?></strong><span>占用空间</span></span>
+        </div>
+        <div class="footer-links">
+          <span class="footer-label">Info</span>
+          <button class="footer-link-button" type="button" data-modal-tab="usage">使用说明</button>
+          <button class="footer-link-button" type="button" data-modal-tab="copyright">版权说明</button>
+          <button class="footer-link-button" type="button" data-modal-tab="privacy">隐私说明</button>
+        </div>
+      </div>
+    </footer>
+
+    <div class="site-modal" id="site-info-modal" hidden>
+      <div class="site-modal-backdrop" data-modal-close></div>
+      <div class="site-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="site-modal-title">
+        <div class="site-modal-head">
+          <div>
+            <p class="site-modal-eyebrow">img.et 图得</p>
+            <h2 id="site-modal-title">站点说明</h2>
+          </div>
+          <button class="site-modal-close" type="button" aria-label="关闭说明弹窗" data-modal-close>
+            <i class="fa-light fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="site-modal-tabs" role="tablist" aria-label="说明标签">
+          <button class="site-modal-tab is-active" type="button" role="tab" aria-selected="true" data-tab="usage">使用说明</button>
+          <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="copyright">版权说明</button>
+          <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="privacy">隐私说明</button>
+        </div>
+        <div class="site-modal-body">
+          <section class="site-modal-panel is-active" data-panel="usage">
+            <p>img.et 是一⸪用于动态图片调用、尺寸生成、格式转换与内容占位的工具站，适合文章头图、卡片配图、开发测试、内容演示与非商业展示等场景。</p>
+            <ul class="site-modal-list">
+              <li>支持通过尺寸、分类、固定参数、多图位与格式参数组合生成可直接访问的图片地址。</li>
+              <li>适合用于开发联调、原型展示、博客配图、站点占位图与内容模块测试。</li>
+              <li>当前站点主要面向学习研究、开发测试、内容占位与非商业用途场景。</li>
+              <li>如用于商业页面、广告投放、客户项目、再分发或素材库用途，请先自行确认授权范围与平台条款。</li>
+            </ul>
+          </section>
+          <section class="site-modal-panel" data-panel="copyright">
+            <p>通过 img.et 访问到的图片，并不归本站所有。本站提供的是图片调用、尺寸处理、格式转换与访问分发能力，不出售图片版权，也不提供版权转让。</p>
+            <ul class="site-modal-list">
+              <li>图片的著作权、肖像权、商标权及其他相关权利，通常归原作者、原始上传者、来源平台或其合法权利人所有。</li>
+              <li>用户在下载、展示、转载、商用或再次分发图片前，应自行确认图片来源、授权范围与适用条件。</li>
+              <li>本站当前不以商业图库或版权素材销售为定位，主要用于工具服务与非商业内容辅助场景。</li>
+              <li>如权利人认为相关内容存在侵权、误用或不当展示情况，可通过页脚邮箱提交说明与权利证明，我们会尽快处理。</li>
+            </ul>
+          </section>
+          <section class="site-modal-panel" data-panel="privacy">
+            <p>img.et 不以收集个人隐私数据为目的，站点仅保留维持服务运行所需的基础请求信息与统计信息，用于缓存优化、故障排查和访问分析。</p>
+            <ul class="site-modal-list">
+              <li>系统可能记录访问时间、请求路径、尺寸参数、分类参数、来源请求头等基础技术信息。</li>
+              <li>本站不主动要求用户提交身份证、支付信息、银行卡等敏感个人信息。</li>
+              <li>如页面启用了统计脚本，其用途仅限于访问统计、服务稳定性分析与功能优化。</li>
+              <li>若你不希望特定链接长期被访问或索引，建议避免公开传播对应地址，并按实际需要联系处理。</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script defer src="/assets/main.min.js"></script>
+</body>
+</html>

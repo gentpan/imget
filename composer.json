@@ -1,0 +1,8 @@
+{
+    "name": "imget/imget",
+    "description": "img.et random image service",
+    "type": "project",
+    "require": {
+        "aws/aws-sdk-php": "^3.373"
+    }
+}

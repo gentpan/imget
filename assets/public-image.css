@@ -1,0 +1,127 @@
+:root {
+  --bg: #f3f6fb;
+  --panel: #fff;
+  --line: #d6dfef;
+  --text: #142033;
+  --muted: #5a6d89;
+  --blue: #0052D9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #f4f7fb 0%, #eef3fb 100%);
+  color: var(--text);
+  font: 15px/1.6 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+.wrap {
+  width: min(1080px, 94vw);
+  margin: 0 auto;
+  padding: 28px 0 48px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 20px;
+}
+
+.panel + .panel {
+  margin-top: 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.brand {
+  color: var(--text);
+  text-decoration: none;
+  font: 700 18px/1 "Google Sans", "Product Sans", "Segoe UI", sans-serif;
+}
+
+.preview {
+  background: #f8fbff;
+  border: 1px solid var(--line);
+  padding: 18px;
+}
+
+.preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 72vh;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--blue);
+  background: #fff;
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  padding: 12px;
+  background: #f8fbff;
+}
+
+.stat strong {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.stat span {
+  font-size: 16px;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
