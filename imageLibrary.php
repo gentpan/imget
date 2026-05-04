@@ -1840,7 +1840,12 @@ function writeRenderableImage($image, string $renderFile, string $format, ?strin
         // Prefer GD's imageavif — lighter, fewer external deps.
         // Imagick AVIF requires libheif/libaom delegate which is often missing.
         if (function_exists('imageavif')) {
-            if (@imageavif($image, $renderFile, 60)) {
+            // libaom encoding at default speed is very slow on large images
+            // (1080p can take 30-60s). Bump time limit and pick a faster
+            // speed so requests don't trip max_execution_time.
+            // speed: 0 = slowest/best, 10 = fastest. 6 keeps quality reasonable.
+            @set_time_limit(120);
+            if (@imageavif($image, $renderFile, 60, 6)) {
                 return true;
             }
         }
