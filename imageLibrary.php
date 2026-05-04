@@ -1837,11 +1837,21 @@ function loadRenderableImageResource(string $file)
 function writeRenderableImage($image, string $renderFile, string $format, ?string &$error = null): bool
 {
     if ($format === 'avif') {
-        if (class_exists('Imagick')) {
-            return writeRenderableAvifWithImagick($image, $renderFile, $error);
+        // Prefer GD's imageavif — lighter, fewer external deps.
+        // Imagick AVIF requires libheif/libaom delegate which is often missing.
+        if (function_exists('imageavif')) {
+            if (@imageavif($image, $renderFile, 60)) {
+                return true;
+            }
         }
-        if (function_exists('imageavif') && @imageavif($image, $renderFile, 60)) {
-            return true;
+        // Fallback to Imagick only if GD is unavailable or failed.
+        if (class_exists('Imagick')) {
+            $imagickError = null;
+            if (writeRenderableAvifWithImagick($image, $renderFile, $imagickError)) {
+                return true;
+            }
+            $error = $imagickError;
+            return false;
         }
         $error = 'AVIF is not supported on this server';
         return false;
