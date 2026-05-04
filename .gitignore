@@ -14,3 +14,10 @@ vendor/
 storage/*.key
 .phpunit.result.cache
 bootstrap/cache/
+
+# Local-only Go rewrite (待决定是否合并入此 repo)
+imgetgo/
+
+# SQLite WAL 临时文件（每次启动会生成）
+database/*.sqlite-shm
+database/*.sqlite-wal

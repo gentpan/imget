@@ -159,22 +159,26 @@ if ($shouldPersistMapping && $selected === null) {
 if ($selected === null) {
     $candidates = findSourceImages($imagesRoot, $originalRoot, $type);
     if ($candidates === []) {
-        if (
-            !$forceRaw &&
-            !$forceDownload &&
-            shouldRenderImageDetailPage($_SERVER, $query)
-        ) {
-            $backgroundCount = (($requestProfile['is_new'] ?? false) === true) ? INITIAL_PREFETCH_COUNT : 1;
-            $backgroundMode = (($requestProfile['is_new'] ?? false) === true) ? 'initial' : 'visit';
-            scheduleBackgroundTopUp($width, $height, $type, $keyword, $backgroundCount, $backgroundMode);
-            renderImagePreparingPage($path, $query, $width, $height, $type, $keyword);
-            exit;
-        }
-
+        // Always try to synchronously fetch at least one image first,
+        // so browser requests don't need multiple refreshes.
         ensureSourceImageAvailable($width, $height, $type, $keyword);
-
         $candidates = findSourceImages($imagesRoot, $originalRoot, $type);
+
         if ($candidates === []) {
+            // Sync fetch failed — show preparing page for browser requests
+            // or create a fallback for raw/API requests.
+            if (
+                !$forceRaw &&
+                !$forceDownload &&
+                shouldRenderImageDetailPage($_SERVER, $query)
+            ) {
+                $backgroundCount = (($requestProfile['is_new'] ?? false) === true) ? INITIAL_PREFETCH_COUNT : 1;
+                $backgroundMode = (($requestProfile['is_new'] ?? false) === true) ? 'initial' : 'visit';
+                scheduleBackgroundTopUp($width, $height, $type, $keyword, $backgroundCount, $backgroundMode);
+                renderImagePreparingPage($path, $query, $width, $height, $type, $keyword);
+                exit;
+            }
+
             $sourceFile = createTemporaryFallbackImage($width, $height, $type, $keyword);
             if ($sourceFile === null || !is_file($sourceFile)) {
                 renderRequestErrorPage(503, '分类图片暂时不可用', '当前分类还没有可用图片，且临时补图失败，请稍后重试。');

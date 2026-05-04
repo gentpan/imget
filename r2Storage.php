@@ -286,7 +286,12 @@ function r2GetCdnUrl(string $relativePath): ?string
     $stmt = $pdo->prepare('SELECT cdn_url FROM r2_uploads WHERE file_path = :file_path');
     $stmt->execute(['file_path' => $relativePath]);
     $value = $stmt->fetchColumn();
-    return $value === false ? null : (string)$value;
+    if ($value === false) {
+        return null;
+    }
+
+    // Always rebuild using current CDN base URL to correct stale domains.
+    return r2GetCdnBaseUrl() . '/' . ltrim($relativePath, '/');
 }
 
 /**
