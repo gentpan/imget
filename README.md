@@ -12,7 +12,7 @@ A small, single-binary image service that turns `https://example.com/{w}/{h}` in
 ### Option A — Docker Compose (no Go toolchain required)
 
 ```bash
-git clone <your fork> && cd imgetgo
+git clone https://github.com/gentpan/imget.git && cd imget
 cp .env.example .env
 # Edit .env — at minimum set SITE_BASE_URL; optional R2/Pixabay credentials.
 docker compose up -d
@@ -219,7 +219,7 @@ curl https://get.acme.sh | sh -s email=admin@example.com
 ## Architecture
 
 ```
-imgetgo/
+imget/
 ├── cmd/imget/                 CLI entry point
 ├── internal/
 │   ├── config/                .env -> Config struct
