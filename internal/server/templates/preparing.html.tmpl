@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Type }} {{ .Width }}x{{ .Height }} - {{ .Site.Name }}</title>
+    <link rel="stylesheet" href="/assets/main.min.css?v=a0737c5b">
+    <style>
+        body.page-image-detail .prepare-box{min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
+        body.page-image-detail .prepare-spinner{width:64px;height:64px;display:block;animation:imget-spin .85s linear infinite}
+        body.page-image-detail .prepare-spinner circle{fill:none;stroke-width:4}
+        body.page-image-detail .prepare-spinner .ring-bg{stroke:#d6dfef}
+        body.page-image-detail .prepare-spinner .ring-accent{stroke:#0052d9;stroke-linecap:round;stroke-dasharray:92 140}
+        body.page-image-detail .prepare-title{font-size:26px;font-weight:800;color:#142033}
+        body.page-image-detail .prepare-copy{max-width:640px;color:#5a6d89;font-size:14px;line-height:1.8}
+        body.page-image-detail .prepare-meta{display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center}
+        @keyframes imget-spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body class="page-image-detail">
+    <main class="wrap">
+        <div class="topbar">
+            <a class="brand" href="{{ .HomeURL }}">
+                <span class="brand-mark"><img src="/assets/logo.png" alt="{{ .Site.Name }} logo"></span>
+                <span>{{ .Site.Name }}</span>
+            </a>
+            <div class="meta-badges">
+                <span class="type-badge">{{ .TypeLabel }} <em>{{ .Type }}</em></span>
+                <span class="meta-badge"><strong>图库数量</strong><span>{{ .SourceLibraryCount }} 张</span></span>
+            </div>
+        </div>
+
+        <section class="hero">
+            <div class="prepare-box">
+                <svg class="prepare-spinner" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle class="ring-bg" cx="32" cy="32" r="24"></circle>
+                    <circle class="ring-accent" cx="32" cy="32" r="24"></circle>
+                </svg>
+                <div class="prepare-title">正在准备图片</div>
+                <div class="prepare-copy">
+                    该分类正在补充第一批图片，请稍候片刻，页面会自动刷新。
+                    {{ if .Keyword }}
+                        <br>关键词：{{ .Keyword }}
+                    {{ end }}
+                </div>
+                <div class="prepare-meta">
+                    <span class="meta-badge"><strong>分类</strong><span>{{ .Type }}</span></span>
+                    <span class="meta-badge"><strong>尺寸</strong><span>{{ .Width }}x{{ .Height }}</span></span>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        window.setTimeout(function () {
+            window.location.replace({{ .PageURL | jsonStr }});
+        }, 2000);
+    </script>
+</body>
+</html>

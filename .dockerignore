@@ -1,0 +1,23 @@
+.git
+.gitignore
+.env
+*.log
+
+# Local build artefacts
+bin/
+database/
+images/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+
+# CI / docs that don't need to land in the image
+README.md
+*.md
+docs/

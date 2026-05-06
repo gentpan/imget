@@ -1,23 +1,24 @@
-.DS_Store
+# Local environment
 .env
 .env.*
 !.env.example
+
+# Build artifacts
+/bin/
+/data/
+/database/
+/images/
+
+# Logs
 *.log
-tmp/
-.cache/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
 .idea/
 .vscode/
 *.swp
 *.swo
-Thumbs.db
-vendor/
-storage/*.key
-.phpunit.result.cache
-bootstrap/cache/
 
-# Local-only Go rewrite (待决定是否合并入此 repo)
-imgetgo/
-
-# SQLite WAL 临时文件（每次启动会生成）
-database/*.sqlite-shm
-database/*.sqlite-wal
+# Claude Code local state (per-user, should not be committed)
+.claude/

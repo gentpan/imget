@@ -1,0 +1,29 @@
+services:
+  imget:
+    build:
+      context: .
+    image: imget:latest
+    container_name: imget
+    restart: unless-stopped
+    env_file:
+      - .env
+    # The container always serves on 8080 internally (set by ENV in the
+    # Dockerfile). Expose it on the host port you want via .env:
+    #     HOST_PORT=8080      # public port
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    volumes:
+      # Persist the SQLite DB and downloaded originals across restarts.
+      - ./data/database:/app/database
+      - ./data/images:/app/images
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    # Reasonable resource limits for a small VPS — tune to taste.
+    deploy:
+      resources:
+        limits:
+          memory: 512M

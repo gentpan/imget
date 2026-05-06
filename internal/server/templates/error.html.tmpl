@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Title }} - {{ .Site.Name }}</title>
+    <link rel="stylesheet" href="/assets/main.min.css?v=a0737c5b">
+    <style>
+        body.page-image-detail .error-box{min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
+        body.page-image-detail .error-code{display:inline-flex;align-items:center;justify-content:center;min-width:88px;padding:10px 16px;border:1px solid #f1c7cd;background:#fff2f4;color:#c24153;font-size:28px;font-weight:800}
+        body.page-image-detail .error-title{font-size:30px;font-weight:800;color:#142033}
+        body.page-image-detail .error-copy{max-width:760px;color:#5a6d89;font-size:15px;line-height:1.9}
+        body.page-image-detail .error-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+        body.page-image-detail .error-action{display:inline-flex;align-items:center;justify-content:center;min-width:132px;padding:11px 18px;border:1px solid #c8d9f5;background:#eef4ff;color:#1f57a8;text-decoration:none;font-weight:700}
+    </style>
+</head>
+<body class="page-image-detail">
+    <main class="wrap">
+        <div class="topbar">
+            <a class="brand" href="{{ .HomeURL }}">
+                <span class="brand-mark"><img src="/assets/logo.png" alt="{{ .Site.Name }} logo"></span>
+                <span>{{ .Site.Name }}</span>
+            </a>
+        </div>
+
+        <section class="hero">
+            <div class="error-box">
+                <div class="error-code">{{ .Status }}</div>
+                <div class="error-title">{{ .Title }}</div>
+                <div class="error-copy">{{ .Detail }}</div>
+                <div class="error-actions">
+                    <a class="error-action" href="{{ .HomeURL }}">返回首页</a>
+                    <a class="error-action" href="{{ .RetryURL }}">重新尝试</a>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Type }} {{ .FileName }} - {{ .Site.Name }}</title>
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="{{ .PageURL }}">
+    <link rel="stylesheet" href="/assets/main.min.css?v=a0737c5b">
+</head>
+
+<body class="page-public-image">
+    <div class="wrap">
+        <div class="topbar">
+            <a class="brand" href="{{ .HomeURL }}">{{ .Site.Name }}</a>
+            <a class="action" href="{{ .HomeURL }}">返回主站</a>
+        </div>
+        <div class="panel">
+            <h1>{{ .Type }}</h1>
+            <p>当前图片资源详情页，适合承接从资源域名直接打开的访问。</p>
+            <div class="preview" view-image>
+                <img src="{{ .RawURL }}" alt="{{ .FileName }}">
+            </div>
+            <div class="actions">
+                <a class="action" href="{{ .RawURL }}" target="_blank" rel="noreferrer">打开图片</a>
+                <a class="action" href="{{ .DownloadURL }}">下载图片</a>
+            </div>
+            <div class="grid">
+                <div class="stat"><strong>类型</strong><span>{{ .Type }}</span></div>
+                <div class="stat"><strong>文件名</strong><span>{{ .FileName }}</span></div>
+                <div class="stat"><strong>尺寸</strong><span>{{ .Meta.Width }} x {{ .Meta.Height }}</span></div>
+                <div class="stat"><strong>大小</strong><span>{{ .Meta.SizeHuman }}</span></div>
+            </div>
+        </div>
+    </div>
+    <script defer src="/assets/main.min.js"></script>
+</body>
+
+</html>
