@@ -420,9 +420,12 @@ type LibrarySummary struct {
 	ByType      map[string]int64
 }
 
+// LibrarySummary returns counts/bytes of *originals* — i.e. rows in the
+// source_images table. Rendered variants (cached intermediate WebP/AVIF) are
+// excluded so the footer reflects "image library size", not "R2 footprint".
 func (d *DB) LibrarySummary(ctx context.Context) (LibrarySummary, error) {
 	var s LibrarySummary
-	row := d.QueryRowContext(ctx, `SELECT COUNT(*), COALESCE(SUM(file_size),0) FROM r2_uploads`)
+	row := d.QueryRowContext(ctx, `SELECT COUNT(*), COALESCE(SUM(file_size),0) FROM source_images`)
 	if err := row.Scan(&s.TotalImages, &s.TotalBytes); err != nil {
 		return s, err
 	}
