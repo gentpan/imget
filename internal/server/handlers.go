@@ -6,14 +6,38 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"imget/internal/db"
 	"imget/internal/imgpipe"
 	"imget/internal/source"
 )
+
+// keywordPattern accepts ASCII letters/digits, Chinese (Han), spaces, dash and
+// underscore. Everything else (punctuation, emojis, URL-encoded junk) is
+// rejected so we don't feed weird strings to Pexels/Pixabay queries.
+var keywordPattern = regexp.MustCompile(`^[\p{L}\p{N} _\-\p{Han}]+$`)
+
+// sanitizeKeyword returns a safe, trimmed keyword or "" when the input is
+// empty, too long, or contains unsupported characters. Cap is 40 runes so a
+// single query stays a reasonable cache key and doesn't bloat request_profiles.
+func sanitizeKeyword(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if utf8.RuneCountInString(s) > 40 {
+		return ""
+	}
+	if !keywordPattern.MatchString(s) {
+		return ""
+	}
+	return s
+}
 
 // ============================================================
 // home (/)
@@ -48,7 +72,7 @@ func (s *Server) handleImage(w http.ResponseWriter, r *http.Request, width, heig
 	if rawType == "" {
 		typ = "banner"
 	}
-	keyword := firstValue(q, "keyword", "q")
+	keyword := sanitizeKeyword(firstValue(q, "keyword", "q"))
 	format := firstValue(q, "format", "f")
 	rValue := firstValue(q, "r", "v")
 	sValue := firstValue(q, "s", "slot", "slot_id")

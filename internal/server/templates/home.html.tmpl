@@ -102,6 +102,10 @@
           <label for="tester-slot">s 值</label>
           <input id="tester-slot" type="text" placeholder="可选，例如 1">
         </div>
+        <div class="tester-field">
+          <label for="tester-keyword">自定义关键词</label>
+          <input id="tester-keyword" type="text" placeholder="可选，覆盖分类默认" maxlength="40">
+        </div>
       </div>
       <div class="tester-actions">
         <div class="tester-url" id="tester-url">{{ .Site.BaseURL }}/1920/1080</div>
@@ -110,7 +114,7 @@
           <a class="action-btn" id="tester-open" href="{{ .Site.BaseURL }}/1920/1080" target="_blank" rel="noopener noreferrer">访问测试</a>
         </div>
       </div>
-      <div class="warn">选择"随机"时不附加 <code>r</code>；选择"固定 r"时使用你输入的 <code>r</code> 值。访问过的尺寸与分类组合会被系统记录，供后续自动补图使用。</div>
+      <div class="warn">选择"随机"时不附加 <code>r</code>；选择"固定 r"时使用你输入的 <code>r</code> 值。<strong>自定义关键词</strong>留空时按分类的默认词搜索（如 <code>animal</code> = "pet dog cat wildlife"），填了则用你的词去 Pexels/Pixabay 搜（限 40 字以内、字母/数字/中文/空格/下划线/连字符）。访问过的尺寸与分类组合会被系统记录，供后续自动补图使用。</div>
       <div class="code-card">
         <div class="code-head">
           <span>同一页面固定多张图</span>

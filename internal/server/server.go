@@ -221,7 +221,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 // redirect, otherwise the local file is streamed.
 func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, rawTyp string) {
 	typ := source.NormalizeType(rawTyp)
-	keyword := strings.TrimSpace(r.URL.Query().Get("keyword"))
+	keyword := sanitizeKeyword(r.URL.Query().Get("keyword"))
 	fixed := strings.TrimSpace(r.URL.Query().Get("r"))
 
 	rel, err := s.deps.Pipeline.PickOriginal(r.Context(), typ, keyword, fixed)
