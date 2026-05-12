@@ -11,8 +11,9 @@ type Request struct {
 	Keyword string // explicit search query, possibly empty
 	Width   int
 	Height  int
-	Count   int // hint: max URLs we'd like back
-	Page    int // 1-based pagination for upstream APIs that support it
+	Count   int    // hint: max URLs we'd like back
+	Page    int    // 1-based pagination for upstream APIs that support it
+	Order   string // upstream order hint, e.g. Pixabay "latest" or "popular" (default empty = provider default)
 }
 
 // Provider is the unified interface for an image-URL source.

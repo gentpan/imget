@@ -50,6 +50,12 @@ type Config struct {
 	PixabayCooldownSec   int
 	PixabayPerPage       int
 
+	PexelsAPIKey        string
+	PexelsMinIntervalMS int
+	PexelsCooldownSec   int
+	PexelsPerPage       int
+	PexelsMinWidth      int // skip Pexels hits whose original is narrower than this
+
 	DefaultFormat  string
 	EnabledFormats []string // explicit allow-list, e.g. ["webp","avif"] or ["webp"]
 	WebPQuality    int
@@ -64,6 +70,11 @@ type Config struct {
 	PerVisitRefetch          int // each subsequent visit: how many to top up
 	DailyTopupIncrement      int
 	DailyTopupMaxPerType     int
+
+	// topup-types: random count in [TopupTypesMinPerType, TopupTypesMaxPerType]
+	// per category each daily run. Used when the CLI omits --min/--max.
+	TopupTypesMinPerType int
+	TopupTypesMaxPerType int
 
 	LogLevel     string
 	AllowedTypes []string
@@ -106,6 +117,12 @@ func Load() (*Config, error) {
 		PixabayCooldownSec:   envInt("PIXABAY_COOLDOWN_SEC", 300),
 		PixabayPerPage:       envInt("PIXABAY_PER_PAGE", 50),
 
+		PexelsAPIKey:        envStr("PEXELS_API_KEY", ""),
+		PexelsMinIntervalMS: envInt("PEXELS_MIN_INTERVAL_MS", 1000),
+		PexelsCooldownSec:   envInt("PEXELS_COOLDOWN_SEC", 300),
+		PexelsPerPage:       envInt("PEXELS_PER_PAGE", 30),
+		PexelsMinWidth:      envInt("PEXELS_MIN_WIDTH", 1920),
+
 		DefaultFormat:  strings.ToLower(envStr("DEFAULT_FORMAT", "webp")),
 		EnabledFormats: parseList(envStr("ENABLED_FORMATS", "webp,avif")),
 		WebPQuality:    envInt("WEBP_QUALITY", 85),
@@ -120,6 +137,9 @@ func Load() (*Config, error) {
 		PerVisitRefetch:          envInt("PER_VISIT_REFETCH", 1),
 		DailyTopupIncrement:      envInt("DAILY_TOPUP_INCREMENT", 10),
 		DailyTopupMaxPerType:     envInt("DAILY_TOPUP_MAX_PER_TYPE", 1000),
+
+		TopupTypesMinPerType: envInt("TOPUP_TYPES_MIN_PER_TYPE", 5),
+		TopupTypesMaxPerType: envInt("TOPUP_TYPES_MAX_PER_TYPE", 10),
 
 		LogLevel:     strings.ToLower(envStr("LOG_LEVEL", "info")),
 		AllowedTypes: parseList(envStr("ALLOWED_TYPES", "")),

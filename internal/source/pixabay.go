@@ -86,6 +86,9 @@ func (p *Pixabay) FetchURLs(ctx context.Context, req Request) ([]string, error) 
 	if req.Page > 0 {
 		q.Set("page", strconv.Itoa(req.Page))
 	}
+	if o := strings.ToLower(strings.TrimSpace(req.Order)); o == "latest" || o == "popular" {
+		q.Set("order", o)
+	}
 	if req.Width > 0 {
 		q.Set("min_width", strconv.Itoa(req.Width))
 	}

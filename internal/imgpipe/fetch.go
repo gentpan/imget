@@ -22,7 +22,9 @@ type FetchRequest struct {
 	Keyword string
 	Width   int
 	Height  int
-	Count   int // how many fresh originals to download
+	Count   int    // how many fresh originals to download
+	Page    int    // upstream pagination (0 = let provider default)
+	Order   string // upstream order hint (e.g. "latest"); empty = provider default
 }
 
 // FetchToLocal downloads up to req.Count new images into images/original/{type}/,
@@ -43,6 +45,8 @@ func (p *Pipeline) FetchToLocal(ctx context.Context, req FetchRequest) ([]string
 		Width:   req.Width,
 		Height:  req.Height,
 		Count:   count + 5, // ask for a few extras to absorb dedupe drops
+		Page:    req.Page,
+		Order:   req.Order,
 	}
 
 	urls, err := source.Chain(ctx, p.sources, srcReq)

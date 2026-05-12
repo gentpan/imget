@@ -39,6 +39,8 @@ func main() {
 		exit(runServe(args))
 	case "daily-topup":
 		exit(runDailyTopup(args))
+	case "topup-types":
+		exit(runTopupTypes(args))
 	case "r2-sync":
 		exit(runR2Sync(args))
 	case "cleanup-cache":
@@ -65,6 +67,7 @@ Usage:
 Commands:
   serve            Start the HTTP server
   daily-topup      Refresh request_profiles by fetching N new images each
+  topup-types      Fetch random 5-10 (configurable) new originals per category
   r2-sync          Upload any disk-resident files missing from R2
   cleanup-cache    Delete rendered variants older than TTL (originals safe)
   import-r2        One-shot: list R2 bucket + populate source_images table
@@ -164,6 +167,47 @@ func runDailyTopup(args []string) error {
 		maxT = cfg.DailyTopupMaxPerType
 	}
 	return jobs.DailyTopup(ctx, log, sqlDB, pipe, inc, maxT)
+}
+
+// =====================================================================
+// topup-types
+// =====================================================================
+
+func runTopupTypes(args []string) error {
+	fs := flag.NewFlagSet("topup-types", flag.ExitOnError)
+	minN := fs.Int("min", 0, "min new originals per category (0 = use TOPUP_TYPES_MIN_PER_TYPE)")
+	maxN := fs.Int("max", 0, "max new originals per category (0 = use TOPUP_TYPES_MAX_PER_TYPE)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	cfg, log, err := boot()
+	if err != nil {
+		return err
+	}
+
+	if *minN == 0 {
+		*minN = cfg.TopupTypesMinPerType
+	}
+	if *maxN == 0 {
+		*maxN = cfg.TopupTypesMaxPerType
+	}
+	sqlDB, err := db.Open(cfg.AbsDBPath())
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	pipe, _, err := buildPipeline(ctx, cfg, sqlDB, log)
+	if err != nil {
+		return err
+	}
+	defer pipe.Close()
+
+	return jobs.TopupByType(ctx, log, sqlDB, pipe, *minN, *maxN)
 }
 
 // =====================================================================
@@ -389,7 +433,19 @@ func buildPipeline(ctx context.Context, cfg *config.Config, sqlDB *db.DB, log *s
 }
 
 func buildProviders(cfg *config.Config) []source.Provider {
-	out := make([]source.Provider, 0, 2)
+	out := make([]source.Provider, 0, 3)
+	// Pexels first: returns the literal `src.original` (truly 4K/5K originals)
+	// when a key is configured. Pixabay free tier caps URLs at 1280px, so we
+	// only fall through to it when Pexels is unset or returns nothing.
+	if cfg.PexelsAPIKey != "" {
+		out = append(out, source.NewPexels(source.PexelsConfig{
+			APIKey:        cfg.PexelsAPIKey,
+			MinIntervalMS: cfg.PexelsMinIntervalMS,
+			CooldownSec:   cfg.PexelsCooldownSec,
+			PerPage:       cfg.PexelsPerPage,
+			MinWidth:      cfg.PexelsMinWidth,
+		}))
+	}
 	if cfg.PixabayAPIKey != "" || cfg.PixabayBackupAPIKey != "" {
 		out = append(out, source.NewPixabay(source.PixabayConfig{
 			APIKey:        cfg.PixabayAPIKey,

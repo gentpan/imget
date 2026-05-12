@@ -34,6 +34,8 @@ type SiteContext struct {
 	PerVisitRefetch      int
 	DailyTopupIncrement  int
 	DailyTopupMaxPerType int
+	TopupTypesMinPerType int
+	TopupTypesMaxPerType int
 }
 
 // HasAnalytics reports whether to render the analytics <script> tag.
@@ -107,5 +109,7 @@ func newSiteContext(cfg *config.Config, enc *encoder.Encoder) SiteContext {
 		PerVisitRefetch:      cfg.PerVisitRefetch,
 		DailyTopupIncrement:  cfg.DailyTopupIncrement,
 		DailyTopupMaxPerType: cfg.DailyTopupMaxPerType,
+		TopupTypesMinPerType: cfg.TopupTypesMinPerType,
+		TopupTypesMaxPerType: cfg.TopupTypesMaxPerType,
 	}
 }

@@ -194,74 +194,16 @@
       </div>
       <p class="muted"><code>webp</code> 兼容性更稳，适合作为默认输出格式；{{ if .Site.SupportsAvif }}<code>avif</code> 压缩效率更高，通常能在保持画质的同时进一步减小体积，适合对带宽和加载速度更敏感的场景。{{ else }}当前服务器暂未启用 <code>avif</code> 输出，因此默认使用 <code>webp</code>。{{ end }}</p>
       <h3>类型</h3>
-      <p>支持通过 <code>type</code> 参数按分类输出图片，也支持按你的业务场景自定义更多类型图片输出。下面这些是常见示例类型，方便你快速选择和使用：</p>
+      <p>支持通过 <code>type</code> 参数按分类输出图片，目前内置 <strong>{{ len .Site.Types }}</strong> 个分类，覆盖自然、人物、宠物、美食、视觉、场景等常见用图。下面是全部分类卡片，点击/复制名称即可在 URL 里使用：</p>
       <div class="type-grid">
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-panorama"></i></span>
-          <div class="type-copy"><strong>banner</strong><p>通用横幅、默认头图</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-mountains"></i></span>
-          <div class="type-copy"><strong>landscape</strong><p>风景、山水、自然场景</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-sparkles"></i></span>
-          <div class="type-copy"><strong>beauty</strong><p>人物、人像、美图</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-stars"></i></span>
-          <div class="type-copy"><strong>anime</strong><p>动漫、插画、二次元</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-city"></i></span>
-          <div class="type-copy"><strong>city</strong><p>城市、建筑、街景</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-leaf-maple"></i></span>
-          <div class="type-copy"><strong>nature</strong><p>森林、海洋、天空、植物</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-car-side"></i></span>
-          <div class="type-copy"><strong>car</strong><p>汽车、机车、赛道</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-gamepad-modern"></i></span>
-          <div class="type-copy"><strong>game</strong><p>游戏、电竞、虚拟场景</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-burger-soda"></i></span>
-          <div class="type-copy"><strong>food</strong><p>美食、甜点、饮品</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-paw-simple"></i></span>
-          <div class="type-copy"><strong>animal</strong><p>动物、萌宠、野生生态</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-plane-departure"></i></span>
-          <div class="type-copy"><strong>travel</strong><p>旅行、目的地、度假氛围</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-galaxy"></i></span>
-          <div class="type-copy"><strong>space</strong><p>星空、宇宙、科幻主题</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-microchip-ai"></i></span>
-          <div class="type-copy"><strong>tech</strong><p>科技、数码、未来感</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-briefcase"></i></span>
-          <div class="type-copy"><strong>business</strong><p>商务、办公、团队场景</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-volleyball"></i></span>
-          <div class="type-copy"><strong>sports</strong><p>运动、健身、赛事画面</p></div>
-        </div>
-        <div class="type-card">
-          <span class="type-icon" aria-hidden="true"><i class="fa-light fa-building"></i></span>
-          <div class="type-copy"><strong>architecture</strong><p>建筑、室内、空间设计</p></div>
-        </div>
+        {{ range .Site.Types }}
+          <div class="type-card">
+            <span class="type-icon" aria-hidden="true"><i class="{{ typeIcon . }}"></i></span>
+            <div class="type-copy"><strong>{{ . }}</strong><p>{{ typeDesc . }}</p></div>
+          </div>
+        {{ end }}
       </div>
-      <div class="warn">首次访问时，系统会优先从现有图片池中直接返回结果，以获得更快的加载速度。对于新的尺寸与分类组合，系统会自动完成登记与预热：首次请求默认补充 {{ .Site.InitialPrefetchCount }} 张，后续每次访问再补充 {{ .Site.PerVisitRefetch }} 张；同时系统会按天持续更新，每日新增 {{ .Site.DailyTopupIncrement }} 张，单个分类最多支持维护 {{ .Site.DailyTopupMaxPerType }} 张图片。</div>
+      <div class="warn">首次访问时，系统会优先从现有图片池中直接返回结果，以获得更快的加载速度。对于新的尺寸与分类组合，系统会自动完成登记与预热：首次请求默认补充 {{ .Site.InitialPrefetchCount }} 张，后续每次访问再补充 {{ .Site.PerVisitRefetch }} 张；系统每天还会对全部 <strong>{{ len .Site.Types }}</strong> 个分类各随机补充 <strong>{{ .Site.TopupTypesMinPerType }}–{{ .Site.TopupTypesMaxPerType }}</strong> 张 4K/5K 原图，长期持续填充。</div>
     </section>
 
     <section class="section">

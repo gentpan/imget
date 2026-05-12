@@ -6,6 +6,7 @@ package jobs
 import (
 	"context"
 	"log/slog"
+	"math/rand"
 	"time"
 
 	"imget/internal/db"
@@ -68,5 +69,53 @@ func DailyTopup(ctx context.Context, log *slog.Logger, sqlDB *db.DB, p *imgpipe.
 	}
 
 	log.Info("topup summary", "processed", processed, "skipped", skipped, "saved", total)
+	return nil
+}
+
+// TopupByType iterates source.AllowedTypes and fetches a random count in
+// [minN, maxN] of fresh originals per type. Uses a random Pixabay page and
+// order=latest to escape the "top hits already collected" dedup deadlock
+// that affects the profile-based DailyTopup when the pool has matured.
+func TopupByType(ctx context.Context, log *slog.Logger, sqlDB *db.DB, p *imgpipe.Pipeline, minN, maxN int) error {
+	if minN <= 0 {
+		minN = 5
+	}
+	if maxN < minN {
+		maxN = minN
+	}
+
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	types := source.AllowedTypes
+
+	totalSaved, errs := 0, 0
+	for _, typ := range types {
+		n := minN
+		if maxN > minN {
+			n += rng.Intn(maxN - minN + 1)
+		}
+		page := 1 + rng.Intn(10) // 1..10 — Pexels has plenty of 4K hits in this range; Pixabay also reaches its hit cap around page 10. Going deeper trades variety for empty pages that fall through.
+
+		saved, err := p.FetchToLocal(ctx, imgpipe.FetchRequest{
+			Type:  typ,
+			Count: n,
+			Page:  page,
+			Order: "latest",
+		})
+		errText := ""
+		if err != nil {
+			errText = err.Error()
+			errs++
+		}
+		_ = sqlDB.AddRefreshLog(ctx, "type:"+typ, 0, 0, typ, "", "daily-types", n, len(saved), errText)
+
+		if err != nil {
+			log.Warn("topup-types error", "type", typ, "page", page, "requested", n, "err", err)
+			continue
+		}
+		log.Info("topup-types ok", "type", typ, "page", page, "requested", n, "saved", len(saved))
+		totalSaved += len(saved)
+	}
+
+	log.Info("topup-types summary", "types", len(types), "saved", totalSaved, "errors", errs)
 	return nil
 }
