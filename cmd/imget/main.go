@@ -49,6 +49,8 @@ func main() {
 		exit(runImportR2(args))
 	case "r2-prune-variants":
 		exit(runPruneVariants(args))
+	case "r2-prune-orphans":
+		exit(runPruneOrphans(args))
 	case "-h", "--help", "help":
 		usage()
 	default:
@@ -72,6 +74,7 @@ Commands:
   cleanup-cache    Delete rendered variants older than TTL (originals safe)
   import-r2        One-shot: list R2 bucket + populate source_images table
   r2-prune-variants  Delete every R2 object NOT under original/ (--yes for real)
+  r2-prune-orphans   Delete R2 objects not referenced by r2_uploads/source_images (--yes for real)
 
 All configuration comes from environment variables (see .env.example).`)
 }
@@ -315,6 +318,49 @@ func runImportR2(args []string) error {
 // =====================================================================
 // r2-prune-variants
 // =====================================================================
+
+func runPruneOrphans(args []string) error {
+	fs := flag.NewFlagSet("r2-prune-orphans", flag.ExitOnError)
+	yes := fs.Bool("yes", false, "actually delete (default is dry-run)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	cfg, log, err := boot()
+	if err != nil {
+		return err
+	}
+	if !cfg.R2Enabled() {
+		return fmt.Errorf("r2-prune-orphans: R2 is not configured")
+	}
+	sqlDB, err := db.Open(cfg.AbsDBPath())
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	r2cli, err := r2.New(ctx, r2.Options{
+		Endpoint:        cfg.R2Endpoint,
+		AccessKeyID:     cfg.R2AccessKeyID,
+		SecretAccessKey: cfg.R2SecretAccessKey,
+		Bucket:          cfg.R2Bucket,
+		Region:          cfg.R2Region,
+		CDNBaseURL:      cfg.R2CDNBaseURL,
+	})
+	if err != nil {
+		return err
+	}
+	dryRun := !*yes
+	if dryRun {
+		log.Warn("DRY-RUN mode: nothing will be deleted. Pass --yes to actually run.")
+	} else {
+		log.Warn("DELETE mode: orphan R2 objects (not in DB) will be removed.")
+	}
+	return jobs.PruneR2Orphans(ctx, log, sqlDB, r2cli, dryRun)
+}
 
 func runPruneVariants(args []string) error {
 	fs := flag.NewFlagSet("r2-prune-variants", flag.ExitOnError)
