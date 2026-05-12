@@ -1,5 +1,7 @@
 # imget
 
+**English** · [简体中文](README.zh-CN.md)
+
 A small, single-binary image service that turns `https://example.com/{w}/{h}` into a freshly-rendered random image, **and** `https://example.com/{type}` into an original-resolution wallpaper. Originals come from Pexels (primary, 4K–8K), Pixabay (fallback), and Picsum (procedural placeholder); output is WebP (default) or AVIF; everything is cached on disk and mirrored to Cloudflare R2 or any S3-compatible store.
 
 - **Single binary deploy** — no admin UI, no PHP, no runtime template files. CSS/JS/templates are embedded.
