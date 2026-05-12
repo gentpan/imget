@@ -420,16 +420,31 @@ type LibrarySummary struct {
 	ByType      map[string]int64
 }
 
-// LibrarySummary returns counts/bytes of *originals* — i.e. rows in the
-// source_images table. Rendered variants (cached intermediate WebP/AVIF) are
-// excluded so the footer reflects "image library size", not "R2 footprint".
+// LibrarySummary returns counts/bytes of *originals* — i.e. rows in
+// r2_uploads whose file_path lives under `original/`. The source_images
+// table only holds the frozen one-shot import pool, so reading from it
+// would never reflect new daily-topup additions. Rendered variants
+// (file_path NOT LIKE 'original/%') are excluded so the footer shows
+// "image library size", not "R2 footprint".
 func (d *DB) LibrarySummary(ctx context.Context) (LibrarySummary, error) {
 	var s LibrarySummary
-	row := d.QueryRowContext(ctx, `SELECT COUNT(*), COALESCE(SUM(file_size),0) FROM source_images`)
+	row := d.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(SUM(file_size),0)
+		  FROM r2_uploads
+		 WHERE file_path LIKE 'original/%'`)
 	if err := row.Scan(&s.TotalImages, &s.TotalBytes); err != nil {
 		return s, err
 	}
-	rows, err := d.QueryContext(ctx, `SELECT type, COUNT(*) FROM source_images GROUP BY type`)
+	// Extract type from file_path = "original/{type}/{sha1}.jpg".
+	// SUBSTR(p, 10, INSTR(SUBSTR(p,10), '/') - 1)
+	//   pos 10 = first char after "original/"
+	//   then take chars up to the next '/'.
+	rows, err := d.QueryContext(ctx, `
+		SELECT SUBSTR(file_path, 10, INSTR(SUBSTR(file_path, 10), '/') - 1) AS typ,
+		       COUNT(*)
+		  FROM r2_uploads
+		 WHERE file_path LIKE 'original/%'
+		 GROUP BY typ`)
 	if err != nil {
 		return s, err
 	}
