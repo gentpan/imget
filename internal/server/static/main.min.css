@@ -644,6 +644,11 @@
       transition: border-color 180ms ease, transform 180ms ease;
     }
 
+    .type-card,
+    .type-card * {
+      text-decoration: none !important;
+    }
+
     .type-card:hover {
       border-color: #8fb0ea;
       transform: translateY(-1px);
