@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .TypeLabel }} 壁纸 - {{ .Site.Name }}</title>
+    {{ if .Site.HasFontAwesome }}<link rel="stylesheet" href="{{ .Site.FontAwesomeCSSURL }}">{{ end }}
+    {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
+    <link rel="stylesheet" href="/assets/main.min.css?v=a0737c5b">
+</head>
+
+<body class="page-image-detail">
+    <main class="wrap">
+        <div class="topbar">
+            <a class="brand" href="{{ .HomeURL }}">
+                <span class="brand-mark"><img src="/assets/logo.png" alt="{{ .Site.Name }} logo"></span>
+                <span>{{ .Site.Name }}</span>
+            </a>
+            <div class="meta-badges">
+                <span class="type-badge">{{ .TypeLabel }} <em>{{ .Type }}</em></span>
+                <span class="meta-badge"><strong>图库数量</strong><span>{{ .PoolCount }} 张</span></span>
+            </div>
+        </div>
+
+        <section class="hero">
+            <div class="preview" view-image>
+                <img class="viewer-image" src="{{ .RawURL }}" alt="{{ .TypeLabel }} 原图" loading="eager">
+                <div class="stats">
+                    <div class="stat"><strong>分类</strong><span>{{ .TypeLabel }}</span></div>
+                    {{ if .Meta.Width }}<div class="stat"><strong>原始分辨率</strong><span>{{ .Meta.Width }} × {{ .Meta.Height }}</span></div>{{ end }}
+                    {{ if .Meta.SizeHuman }}<div class="stat"><strong>文件大小</strong><span>{{ .Meta.SizeHuman }}</span></div>{{ end }}
+                    {{ if .FormatLabel }}<div class="stat"><strong>格式</strong><span>{{ .FormatLabel }}</span></div>{{ end }}
+                    {{ if .FixedR }}<div class="stat"><strong>固定 r</strong><span>{{ .FixedR }}</span></div>{{ end }}
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="links-grid">
+                <div class="link-card">
+                    <div class="link-card-head">
+                        <h3>壁纸短链(原始分辨率)</h3>
+                        <div class="icon-actions">
+                            <button type="button" data-open="{{ .ShortURL }}{{ if .HasQuery }}&{{ else }}?{{ end }}raw=1" aria-label="打开原图" title="打开原图">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M14 4h6v6"></path>
+                                    <path d="M10 14L20 4"></path>
+                                    <path d="M20 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-download="{{ .DownloadURL }}" aria-label="下载原图" title="下载原图">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M12 3v12"></path>
+                                    <path d="M7 10l5 5 5-5"></path>
+                                    <path d="M5 21h14"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="link-card-body">
+                        <div class="format-list">
+                            {{ range .ImageFormats }}
+                                <div class="format-row">
+                                    <div class="format-label">{{ .Label }}</div>
+                                    <div class="format-value mono">{{ .Value }}</div>
+                                    <button type="button" data-copy="{{ .Value }}" aria-label="复制{{ .Label }}" title="复制 {{ .Label }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <rect x="9" y="9" width="10" height="10"></rect>
+                                            <path d="M5 15V5h10"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warn">
+                {{ if .FixedR }}
+                  当前短链固定 <code>?r={{ .FixedR }}</code>，每次访问会返回同一张图（适合壁纸客户端固定主题）。
+                {{ else }}
+                  当前短链每次访问随机返回一张 <strong>{{ .TypeLabel }}</strong> 原图。需要固定一张？在 URL 末尾加 <code>?r=任意数字</code>。
+                {{ end }}
+                {{ if .Keyword }} 当前关键词 <code>{{ .Keyword }}</code>。{{ end }}
+                <a href="{{ .ShortURL }}">点这里刷新一张</a>。
+            </div>
+        </section>
+    </main>
+    <script defer src="/assets/main.min.js"></script>
+</body>
+
+</html>

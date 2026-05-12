@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -216,9 +217,13 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 //
 //	?r=N        — fixed selection: same r maps to same image (cacheable)
 //	?keyword=X  — override the default type keyword (free-form search)
+//	?raw=1      — force binary image even on browser navigation
 //
-// When an R2 CDN URL is known for the picked file the response is a 302
-// redirect, otherwise the local file is streamed.
+// Content negotiation:
+//   - Browser navigation (Accept: text/html, no raw=1) → render the wallpaper
+//     preview page (image + copy-able URLs).
+//   - <img src="..."> / Sec-Fetch-Dest=image / ?raw=1 → 302 to R2 CDN, or
+//     stream local when CDN isn't configured.
 func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, rawTyp string) {
 	typ := source.NormalizeType(rawTyp)
 	keyword := sanitizeKeyword(r.URL.Query().Get("keyword"))
@@ -228,6 +233,15 @@ func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, ra
 	if err != nil || rel == "" {
 		s.deps.Logger.Warn("wallpaper pick failed", "type", typ, "err", err)
 		http.Error(w, "no source available", http.StatusServiceUnavailable)
+		return
+	}
+
+	rawRequested := r.URL.Query().Get("raw") == "1" ||
+		strings.EqualFold(r.Header.Get("Sec-Fetch-Dest"), "image")
+	wantsHTML := strings.Contains(r.Header.Get("Accept"), "text/html") && !rawRequested
+
+	if wantsHTML {
+		s.renderWallpaperDetail(w, r, rel, typ, keyword, fixed)
 		return
 	}
 
@@ -253,4 +267,72 @@ func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, ra
 		return
 	}
 	http.ServeFile(w, r, abs)
+}
+
+// renderWallpaperDetail renders the HTML preview page for a wallpaper-mode
+// URL — what the browser sees when navigating to /landscape directly.
+func (s *Server) renderWallpaperDetail(w http.ResponseWriter, r *http.Request, rel, typ, keyword, fixed string) {
+	var meta FileMeta
+	if abs, err := s.deps.Pipeline.EnsureSourceLocal(r.Context(), rel); err == nil {
+		meta = GetFileMeta(abs)
+	}
+
+	cdn := s.deps.Pipeline.CDNURLFor(r.Context(), rel)
+	rawURL := cdn
+	if rawURL == "" {
+		rawURL = s.deps.Cfg.SiteBaseURL + "/" + rel
+	}
+
+	shortURL := s.deps.Cfg.SiteBaseURL + "/" + typ
+	hasQuery := false
+	if fixed != "" {
+		shortURL += "?r=" + url.QueryEscape(fixed)
+		hasQuery = true
+	}
+	if keyword != "" {
+		if hasQuery {
+			shortURL += "&keyword=" + url.QueryEscape(keyword)
+		} else {
+			shortURL += "?keyword=" + url.QueryEscape(keyword)
+			hasQuery = true
+		}
+	}
+
+	filename := filepath.Base(rel)
+	downloadURL := s.deps.Cfg.SiteBaseURL + "/files/" + typ + "/" + filename + "?download=1"
+
+	htmlSnippet := `<img src="` + shortURL + `" alt="` + typ + `">`
+	mdSnippet := "![" + typ + "](" + shortURL + ")"
+	bbSnippet := "[img]" + shortURL + "[/img]"
+
+	formats := []formatRow{
+		{"短链", shortURL},
+		{"直链", rawURL},
+		{"HTML", htmlSnippet},
+		{"Markdown", mdSnippet},
+		{"BBCode", bbSnippet},
+	}
+
+	data := map[string]any{
+		"Site":         s.site,
+		"Type":         typ,
+		"TypeLabel":    TypeChineseLabel(typ),
+		"FormatLabel":  FormatImageFormatLabel(meta.Extension),
+		"Keyword":      keyword,
+		"FixedR":       fixed,
+		"ShortURL":     shortURL,
+		"HasQuery":     hasQuery,
+		"RawURL":       rawURL,
+		"DownloadURL":  downloadURL,
+		"Meta":         meta,
+		"PoolCount":    s.deps.Pipeline.CountOriginalsForType(typ),
+		"HomeURL":      s.deps.Cfg.SiteBaseURL + "/",
+		"ImageFormats": formats,
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	if err := s.templates.render(w, "wallpaper.html.tmpl", data); err != nil {
+		s.deps.Logger.Error("wallpaper render", "err", err)
+	}
 }
