@@ -638,6 +638,15 @@
       padding: 12px 14px;
       min-height: 84px;
       background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: border-color 180ms ease, transform 180ms ease;
+    }
+
+    .type-card:hover {
+      border-color: #8fb0ea;
+      transform: translateY(-1px);
     }
 
     .type-icon {

@@ -226,10 +226,10 @@
       <p>支持通过 <code>type</code> 参数按分类输出图片，目前内置 <strong>{{ len .Site.Types }}</strong> 个分类，覆盖自然、人物、宠物、美食、视觉、场景等常见用图。下面是全部分类卡片，点击/复制名称即可在 URL 里使用：</p>
       <div class="type-grid">
         {{ range .Site.Types }}
-          <div class="type-card">
+          <a class="type-card" href="{{ $.Site.BaseURL }}/{{ . }}" title="点击查看 {{ . }} 分类原始高清图（壁纸模式）">
             <span class="type-icon" aria-hidden="true"><i class="{{ typeIcon . }}"></i></span>
             <div class="type-copy"><strong>{{ . }}</strong><p>{{ typeDesc . }}</p></div>
-          </div>
+          </a>
         {{ end }}
       </div>
       <div class="warn">首次访问时，系统会优先从现有图片池中直接返回结果，以获得更快的加载速度。对于新的尺寸与分类组合，系统会自动完成登记与预热：首次请求默认补充 {{ .Site.InitialPrefetchCount }} 张，后续每次访问再补充 {{ .Site.PerVisitRefetch }} 张；系统每天还会对全部 <strong>{{ len .Site.Types }}</strong> 个分类各随机补充 <strong>{{ .Site.TopupTypesMinPerType }}–{{ .Site.TopupTypesMaxPerType }}</strong> 张 4K/5K 原图，长期持续填充。</div>
