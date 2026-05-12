@@ -33,7 +33,7 @@ docker compose up -d --build
 
 ### Option B — Build from source
 
-Requires Go 1.23+ and **libvips** (8.13 or later) on the build & runtime hosts. Image decoding, resizing and WebP/AVIF encoding all flow through libvips via govips — no per-format CLI tools needed.
+Requires Go 1.26+ (set in `go.mod`) and **libvips** (8.13 or later) on the build & runtime hosts. Image decoding, resizing and WebP/AVIF encoding all flow through libvips via govips — no per-format CLI tools needed.
 
 ```bash
 # macOS
@@ -143,7 +143,7 @@ Query params:
 - `keyword` / `q` — free-text search override (overrides type's default keyword)
 - `format` / `f` — `webp` or `avif`
 - `r` / `v` — persistent variant ID (same `r` always resolves to the same source)
-- `s` / `slot` — slot ID (different `s` with same `r` ⇒ different image at the same article)
+- `s` / `slot` / `slot_id` — slot ID (different `s` with same `r` ⇒ different image at the same article)
 - `fresh=N` — refetch N images before selecting
 - `download=1` / `raw=1` — force file download / force raw image even on browser navigation
 

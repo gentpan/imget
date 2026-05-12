@@ -33,7 +33,7 @@ docker compose up -d --build
 
 ### 方案 B — 源码 build
 
-需要 Go 1.23+ 和 **libvips**(8.13 或更新)。解码、缩放、WebP/AVIF 编码全走 libvips,不需要装其他格式工具。
+需要 Go 1.26+(`go.mod` 写死)和 **libvips**(8.13 或更新)。解码、缩放、WebP/AVIF 编码全走 libvips,不需要装其他格式工具。
 
 ```bash
 # macOS
@@ -143,7 +143,7 @@ GET /800/600?type=animal&keyword=orange+tabby+cat
 - `keyword` / `q` — 自定义搜索词(覆盖分类默认词)
 - `format` / `f` — `webp` 或 `avif`
 - `r` / `v` — 固定取图(同一 `r` 始终对应同一张源)
-- `s` / `slot` — 位置(同 `r` 不同 `s` 拿同一文章的不同图位)
+- `s` / `slot` / `slot_id` — 位置(同 `r` 不同 `s` 拿同一文章的不同图位)
 - `fresh=N` — 选图前先抓 N 张新的
 - `download=1` / `raw=1` — 强制下载 / 强制返回原图
 
