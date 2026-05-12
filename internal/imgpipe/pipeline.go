@@ -443,6 +443,75 @@ func (p *Pipeline) sourceUsable(rel string) bool {
 	return false
 }
 
+// PickOriginal returns the relative path of one original-resolution image
+// for `typ`, suitable for serving directly without resizing — wallpaper-app
+// use case behind `/{type}` and `/type/{type}` routes.
+//
+// Selection order mirrors selectSource but skips the (w,h) variant cache:
+//   1. If `fixed` is set, look it up in url_cache (LRU then SQLite) so the
+//      same r value resolves to the same image across requests.
+//   2. Local disk pool under images/original/{type}/.
+//   3. Remote source_images pool (download lazily).
+//   4. Live fetch from upstream provider chain.
+//
+// Returns the same shape of `rel` (e.g. "original/landscape/abc.jpg") used
+// elsewhere. Callers can map that to a CDN URL via the r2_uploads table,
+// or stream the local file directly.
+func (p *Pipeline) PickOriginal(ctx context.Context, typ, keyword, fixed string) (string, error) {
+	typ = source.NormalizeType(typ)
+
+	// 1. Honor fixed `?r=N` via the same url_cache used by render variants,
+	// namespaced under a "wallpaper" scope so it doesn't collide with sized
+	// variants of the same (type, r).
+	cacheKey := ""
+	if fixed != "" {
+		cacheKey = variantCacheKey("wallpaper:"+typ, fixed, "")
+		if rel, ok := p.urlCacheLRU.Get(cacheKey); ok && p.sourceUsable(rel) {
+			return rel, nil
+		}
+		if rel, ok, _ := p.db.GetURLCache(ctx, cacheKey); ok && p.sourceUsable(rel) {
+			p.urlCacheLRU.Add(cacheKey, rel)
+			return rel, nil
+		}
+	}
+
+	// 2. Local pool.
+	rel := p.pickLocalOriginal(typ, fixed)
+	if rel == "" {
+		// 3. Remote source pool.
+		if r := p.pickRemoteOriginal(ctx, typ); r != "" {
+			rel = r
+		}
+	}
+	if rel == "" {
+		// 4. Live fetch from upstream. Pull a small batch so subsequent
+		// wallpaper hits warm up too.
+		if saved, err := p.FetchToLocal(ctx, FetchRequest{
+			Type:    typ,
+			Keyword: keyword,
+			Count:   5,
+		}); err == nil && len(saved) > 0 {
+			rel = saved[0]
+		}
+	}
+	if rel == "" {
+		return "", fmt.Errorf("no source available for type %q", typ)
+	}
+
+	// Persist the fixed mapping so future `?r=N` hits skip the picker.
+	if cacheKey != "" {
+		_ = p.db.PutURLCache(ctx, cacheKey, rel)
+		p.urlCacheLRU.Add(cacheKey, rel)
+	}
+	return rel, nil
+}
+
+// EnsureSourceLocal exposes ensureSourceLocal so handlers can stream the
+// original file when CDN redirect is disabled or unavailable.
+func (p *Pipeline) EnsureSourceLocal(ctx context.Context, rel string) (string, error) {
+	return p.ensureSourceLocal(ctx, rel)
+}
+
 // pickLocalOriginal returns a random original path under images/original/{type}/, or "".
 // When slot is non-empty we deterministically map slot → file index so different
 // slots reliably yield different images.

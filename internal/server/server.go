@@ -16,6 +16,7 @@ import (
 	"imget/internal/encoder"
 	"imget/internal/imgpipe"
 	"imget/internal/metrics"
+	"imget/internal/source"
 )
 
 // Deps bundles everything a Server needs.
@@ -81,7 +82,19 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) {
 	parts := splitPath(path)
 
 	switch len(parts) {
+	case 1:
+		// /{type} — wallpaper shortcut: 1 segment matching an allowed type
+		// returns one original-resolution image (302 to CDN if configured).
+		if source.IsAllowedType(parts[0]) {
+			s.handleOriginalByType(w, r, parts[0])
+			return
+		}
 	case 2:
+		// /type/{type} — explicit namespaced wallpaper form.
+		if parts[0] == "type" && source.IsAllowedType(parts[1]) {
+			s.handleOriginalByType(w, r, parts[1])
+			return
+		}
 		// /{w}/{h}  OR  /{type}/{file.ext}
 		if hasImageExt(parts[1]) {
 			s.handleFileDirect(w, r, parts[0], parts[1])
@@ -194,4 +207,50 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte("ok"))
+}
+
+// handleOriginalByType serves one original-resolution image for the given
+// category. Used by the wallpaper-friendly routes /{type} and /type/{type}.
+//
+// Query params:
+//
+//	?r=N        — fixed selection: same r maps to same image (cacheable)
+//	?keyword=X  — override the default type keyword (free-form search)
+//
+// When an R2 CDN URL is known for the picked file the response is a 302
+// redirect, otherwise the local file is streamed.
+func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, rawTyp string) {
+	typ := source.NormalizeType(rawTyp)
+	keyword := strings.TrimSpace(r.URL.Query().Get("keyword"))
+	fixed := strings.TrimSpace(r.URL.Query().Get("r"))
+
+	rel, err := s.deps.Pipeline.PickOriginal(r.Context(), typ, keyword, fixed)
+	if err != nil || rel == "" {
+		s.deps.Logger.Warn("wallpaper pick failed", "type", typ, "err", err)
+		http.Error(w, "no source available", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Cache-Control: fixed r = stable, randoms get a short TTL so each fresh
+	// hit through a CDN actually rotates.
+	if fixed != "" {
+		w.Header().Set("Cache-Control", "public, max-age=86400, immutable")
+	} else {
+		w.Header().Set("Cache-Control", "public, max-age=300")
+	}
+
+	if s.deps.Cfg.R2RedirectDirect {
+		if cdn := s.deps.Pipeline.CDNURLFor(r.Context(), rel); cdn != "" {
+			http.Redirect(w, r, cdn, http.StatusFound)
+			return
+		}
+	}
+
+	abs, err := s.deps.Pipeline.EnsureSourceLocal(r.Context(), rel)
+	if err != nil {
+		s.deps.Logger.Warn("wallpaper local-ensure failed", "rel", rel, "err", err)
+		http.Error(w, "source missing", http.StatusServiceUnavailable)
+		return
+	}
+	http.ServeFile(w, r, abs)
 }

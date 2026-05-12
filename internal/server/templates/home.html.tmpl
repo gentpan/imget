@@ -177,6 +177,31 @@
 }</code></pre>
       </div>
       <div class="warn">短链格式为 <code>{{ .Site.BaseURL }}/宽/高</code>，默认直接返回图片文件，适合 <code>&lt;img&gt;</code>、CSS 背景和 API 调用。如需打开预览详情页，可追加 <code>preview=1</code>。</div>
+
+      <h3>壁纸模式（原始分辨率）</h3>
+      <p>如果你做的是壁纸 app、桌面/锁屏轮换、或者只想直接拿到一张高清原图（不裁剪、不缩放、4K~8K 原生分辨率），用下面这种短链格式：</p>
+      <div class="code-card">
+        <div class="code-head">
+          <span>壁纸短链</span>
+          <button class="copy-btn" data-copy-target="wallpaper-url" type="button" aria-label="复制壁纸示例">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="9" y="9" width="10" height="10"></rect>
+              <path d="M5 15V5h10"></path>
+            </svg>
+          </button>
+        </div>
+        <pre id="wallpaper-url"><code><span class="hl-cmt"># 直接给分类名即可，每次返回一张随机原图（302 跳转到 R2 CDN）</span>
+{{ .Site.BaseURL }}/landscape
+{{ .Site.BaseURL }}/animal
+{{ .Site.BaseURL }}/space
+
+<span class="hl-cmt"># 等价的命名空间形式</span>
+{{ .Site.BaseURL }}/type/landscape
+
+<span class="hl-cmt"># 固定同一张图：r 值相同 = 始终是同一张壁纸（强缓存，适合主题轮播）</span>
+{{ .Site.BaseURL }}/landscape?r=749630</code></pre>
+      </div>
+      <div class="warn">壁纸短链返回的是 Pexels/Pixabay 拉到的原始图（一般 4K~8K），不经过 resize 或格式转换。不带 <code>r</code> 时每次随机；带 <code>r</code> 则固定，并附带强缓存头适合 CDN/客户端缓存。</div>
       <h3>格式</h3>
       <p>当前服务器支持的输出格式为 <code>webp</code>{{ if .Site.SupportsAvif }} 和 <code>avif</code>{{ end }}。所有格式都由当前域名直接输出。</p>
       <div class="code-card">

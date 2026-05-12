@@ -152,11 +152,9 @@ func pickPexelsURL(src map[string]any) string {
 // improves relevance. Empty means "any" (Pexels default = mixed).
 func pexelsOrientation(typ string) string {
 	switch NormalizeType(typ) {
-	case "beauty", "portrait", "fashion", "baby":
+	case "beauty":
 		return "portrait"
-	case "banner", "landscape", "city", "nature", "travel", "architecture", "space",
-		"ocean", "mountain", "forest", "desert", "sunset", "sky", "wildlife",
-		"wallpaper", "background", "interior", "street":
+	case "banner", "landscape", "city", "nature", "travel", "architecture", "space":
 		return "landscape"
 	}
 	return ""
