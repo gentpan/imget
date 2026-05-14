@@ -247,12 +247,18 @@ func (p *Pipeline) Render(ctx context.Context, req RenderRequest) (*RenderResult
 	// Queue upload of this rendered file.
 	p.QueueUpload(renderRel)
 
-	// Look up CDN URL if already uploaded.
+	// Compute the CDN URL eagerly. The string is deterministic
+	// (CDN_BASE + "/" + rel), so we don't need the upload to finish to
+	// know what URL the file will live at. The upload worker is fast
+	// (<1s typical) and the user usually doesn't click the copied URL
+	// instantly — by the time it's used, the object is in R2.
+	//
+	// The trade-off: if uploads are failing systematically, every URL
+	// here will 404 at the CDN. That's the correct alert signal anyway;
+	// silently falling back to /files/* would mask the real problem.
 	cdn := ""
 	if p.r2c != nil {
-		if u, _ := p.db.GetR2Upload(ctx, renderRel); u != nil {
-			cdn = u.CDNURL
-		}
+		cdn = p.r2c.CDNURL(renderRel)
 	}
 
 	return &RenderResult{
