@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"imget/internal/db"
+	"imget/internal/mediatype"
 	"imget/internal/metrics"
 )
 
@@ -86,17 +87,5 @@ func (p *Pipeline) removeLocalVariant(rel string) {
 }
 
 func contentTypeForExt(ext string) string {
-	switch strings.ToLower(ext) {
-	case ".webp":
-		return "image/webp"
-	case ".avif":
-		return "image/avif"
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	case ".png":
-		return "image/png"
-	case ".gif":
-		return "image/gif"
-	}
-	return "application/octet-stream"
+	return mediatype.ForExt(ext)
 }

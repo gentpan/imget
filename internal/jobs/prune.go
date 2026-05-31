@@ -26,39 +26,20 @@ func PruneR2Variants(
 	dryRun bool,
 ) error {
 	const keepPrefix = "original/"
-	const batchSize = 1000
 
 	var (
 		total       int64
 		willDelete  int64
 		bytesToFree int64
-		toDelete    []string
-		flushed     int64
 	)
 
-	flush := func() error {
-		if len(toDelete) == 0 {
-			return nil
+	bd := newBatchDeleter(client, log, dryRun, "prune")
+	// Mirror each deleted chunk into r2_uploads so the runtime forgets them.
+	// Best-effort — a stray DELETE on a non-existent row is a harmless no-op.
+	bd.afterDelete = func(ctx context.Context, keys []string) {
+		for _, k := range keys {
+			_, _ = sqlDB.ExecContext(ctx, `DELETE FROM r2_uploads WHERE r2_key = ?`, k)
 		}
-		if dryRun {
-			toDelete = toDelete[:0]
-			return nil
-		}
-		if err := client.DeleteBatch(ctx, toDelete); err != nil {
-			return err
-		}
-		// Mirror the deletes into r2_uploads so the runtime forgets them.
-		// Best-effort — failures here are logged but not fatal.
-		for _, k := range toDelete {
-			if u, _ := sqlDB.GetR2UploadByR2Key(ctx, k); u != nil {
-				_, _ = sqlDB.ExecContext(ctx,
-					`DELETE FROM r2_uploads WHERE r2_key = ?`, k)
-			}
-		}
-		flushed += int64(len(toDelete))
-		log.Info("prune progress", "deleted_total", flushed, "still_pending", willDelete-flushed)
-		toDelete = toDelete[:0]
-		return nil
 	}
 
 	start := time.Now()
@@ -69,16 +50,12 @@ func PruneR2Variants(
 		}
 		willDelete++
 		bytesToFree += o.Size
-		toDelete = append(toDelete, o.Key)
-		if len(toDelete) >= batchSize {
-			return flush()
-		}
-		return nil
+		return bd.add(ctx, o.Key)
 	})
 	if err != nil {
 		return err
 	}
-	if err := flush(); err != nil {
+	if err := bd.flush(ctx); err != nil {
 		return err
 	}
 

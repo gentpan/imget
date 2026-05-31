@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"imget/internal/mediatype"
 	"imget/internal/source"
 )
 
@@ -154,18 +155,8 @@ func (p *Pipeline) downloadOne(ctx context.Context, u, dstDir, typ string, seen 
 }
 
 func guessExtension(contentType, urlStr string) string {
-	ct := strings.ToLower(strings.SplitN(contentType, ";", 2)[0])
-	switch ct {
-	case "image/jpeg":
-		return ".jpg"
-	case "image/png":
-		return ".png"
-	case "image/gif":
-		return ".gif"
-	case "image/webp":
-		return ".webp"
-	case "image/avif":
-		return ".avif"
+	if ext := mediatype.ExtForContentType(contentType); ext != "" {
+		return ext
 	}
 	// Fall back to URL suffix.
 	if i := strings.LastIndex(urlStr, "."); i > 0 {
