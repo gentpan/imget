@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ .Type }} {{ .Width }}x{{ .Height }} - {{ .Site.Name }}</title>
     {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
-    <link rel="stylesheet" href="/assets/main.min.css?v=2026051201">
+    <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
 </head>
 
 <body class="page-image-detail">
@@ -113,7 +113,7 @@
         el.textContent = y + '-' + m + '-' + day + ' ' + h + ':' + min;
     });
     </script>
-    <script defer src="/assets/main.min.js"></script>
+    <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
 </body>
 
 </html>

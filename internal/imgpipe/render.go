@@ -3,7 +3,6 @@ package imgpipe
 import (
 	"context"
 	"crypto/sha1"
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -19,27 +18,68 @@ import (
 // renderToFile decodes srcPath, center-crops to (w,h), and encodes into dstPath.
 // All steps go through libvips via the encoder package.
 func (p *Pipeline) renderToFile(ctx context.Context, srcPath, dstPath string, w, h int, format string) error {
+	// Bound concurrent encodes to CPU count (see renderSem in New).
+	select {
+	case p.renderSem <- struct{}{}:
+		defer func() { <-p.renderSem }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
+	// AVIF encoding is CPU-heavy and libvips itself is not context-aware, so a
+	// pathological input could pin a worker indefinitely. Enforce AVIF_TIMEOUT_SEC
+	// (previously read but never applied) by abandoning the wait on timeout.
+	if format == "avif" && p.cfg.AVIFTimeoutSec > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(p.cfg.AVIFTimeoutSec)*time.Second)
+		defer cancel()
+	}
+
 	start := time.Now()
-	err := p.enc.RenderToFile(ctx, srcPath, dstPath, w, h, encoder.Format(format))
+	err := p.encodeWithDeadline(ctx, srcPath, dstPath, w, h, encoder.Format(format))
 	metrics.ObserveRender(format, time.Since(start), err)
 	return err
 }
 
-// makeFallbackOriginal writes a procedural gradient PNG into images/original/{type}/
+// encodeWithDeadline runs the blocking, non-cancellable libvips render on a side
+// goroutine so a timed-out AVIF encode returns control to the request instead of
+// pinning it. The goroutine runs to completion in the background — the encoder's
+// .part temp file is removed on its own deferred cleanup — and a later request
+// for the same variant simply finds it cached if it eventually lands.
+func (p *Pipeline) encodeWithDeadline(ctx context.Context, srcPath, dstPath string, w, h int, format encoder.Format) error {
+	done := make(chan error, 1)
+	go func() {
+		done <- p.enc.RenderToFile(ctx, srcPath, dstPath, w, h, format)
+	}()
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// makeFallbackOriginal writes a procedural gradient PNG into images/_fallback/
 // and returns its relative path. Used when no real image source is available.
+//
+// It lives OUTSIDE original/{type}/ on purpose: keeping it in the real source
+// pool would let pickLocalOriginal serve the gradient even after real images
+// arrive, inflate CountOriginalsForType, and make HasAnyOriginal report a
+// category as "ready" when it only has a placeholder.
 //
 // We keep this on the std lib (image/png) because the gradient is built
 // pixel-by-pixel — there's no benefit from libvips here, and avoiding vips
 // imports keeps the fallback path independent of the encoder.
 func (p *Pipeline) makeFallbackOriginal(typ string) (string, error) {
-	dir := filepath.Join(p.cfg.AbsImagesDir(), "original", typ)
+	dir := filepath.Join(p.cfg.AbsImagesDir(), "_fallback")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
-	name := "fallback-" + typ + ".png"
+	name := typ + ".png"
 	abs := filepath.Join(dir, name)
+	rel := filepath.ToSlash(filepath.Join("_fallback", name))
 	if fi, err := os.Stat(abs); err == nil && fi.Size() > 0 {
-		return filepath.ToSlash(filepath.Join("original", typ, name)), nil
+		return rel, nil
 	}
 
 	const W, H = 1920, 1080
@@ -74,7 +114,7 @@ func (p *Pipeline) makeFallbackOriginal(typ string) (string, error) {
 		_ = os.Remove(tmp)
 		return "", err
 	}
-	return filepath.ToSlash(filepath.Join("original", typ, name)), nil
+	return rel, nil
 }
 
 func gradientColorsFor(typ string) (a, b color.RGBA) {
@@ -97,5 +137,3 @@ func dist(a, b color.RGBA) float64 {
 }
 
 func lerp(a, b, t float64) float64 { return a + (b-a)*t }
-
-var _ = fmt.Sprintf // keep fmt import even if unused after future edits

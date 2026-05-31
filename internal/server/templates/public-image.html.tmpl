@@ -7,7 +7,7 @@
     <title>{{ .Type }} {{ .FileName }} - {{ .Site.Name }}</title>
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="{{ .PageURL }}">
-    <link rel="stylesheet" href="/assets/main.min.css?v=2026051201">
+    <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
 </head>
 
 <body class="page-public-image">
@@ -34,7 +34,7 @@
             </div>
         </div>
     </div>
-    <script defer src="/assets/main.min.js"></script>
+    <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
 </body>
 
 </html>

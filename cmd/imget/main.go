@@ -142,34 +142,17 @@ func runDailyTopup(args []string) error {
 		}
 	}
 
-	cfg, log, err := boot()
-	if err != nil {
-		return err
-	}
-	sqlDB, err := db.Open(cfg.AbsDBPath())
-	if err != nil {
-		return err
-	}
-	defer sqlDB.Close()
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	pipe, _, err := buildPipeline(ctx, cfg, sqlDB, log)
-	if err != nil {
-		return err
-	}
-	defer pipe.Close()
-
-	inc := *increment
-	if inc == 0 {
-		inc = cfg.DailyTopupIncrement
-	}
-	maxT := *maxPerType
-	if maxT == 0 {
-		maxT = cfg.DailyTopupMaxPerType
-	}
-	return jobs.DailyTopup(ctx, log, sqlDB, pipe, inc, maxT)
+	return withPipeline(false, func(ctx context.Context, cfg *config.Config, sqlDB *db.DB, pipe *imgpipe.Pipeline, log *slog.Logger) error {
+		inc := *increment
+		if inc == 0 {
+			inc = cfg.DailyTopupIncrement
+		}
+		maxT := *maxPerType
+		if maxT == 0 {
+			maxT = cfg.DailyTopupMaxPerType
+		}
+		return jobs.DailyTopup(ctx, log, sqlDB, pipe, inc, maxT)
+	})
 }
 
 // =====================================================================
@@ -184,33 +167,16 @@ func runTopupTypes(args []string) error {
 		return err
 	}
 
-	cfg, log, err := boot()
-	if err != nil {
-		return err
-	}
-
-	if *minN == 0 {
-		*minN = cfg.TopupTypesMinPerType
-	}
-	if *maxN == 0 {
-		*maxN = cfg.TopupTypesMaxPerType
-	}
-	sqlDB, err := db.Open(cfg.AbsDBPath())
-	if err != nil {
-		return err
-	}
-	defer sqlDB.Close()
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	pipe, _, err := buildPipeline(ctx, cfg, sqlDB, log)
-	if err != nil {
-		return err
-	}
-	defer pipe.Close()
-
-	return jobs.TopupByType(ctx, log, sqlDB, pipe, *minN, *maxN)
+	return withPipeline(false, func(ctx context.Context, cfg *config.Config, sqlDB *db.DB, pipe *imgpipe.Pipeline, log *slog.Logger) error {
+		mn, mx := *minN, *maxN
+		if mn == 0 {
+			mn = cfg.TopupTypesMinPerType
+		}
+		if mx == 0 {
+			mx = cfg.TopupTypesMaxPerType
+		}
+		return jobs.TopupByType(ctx, log, sqlDB, pipe, mn, mx)
+	})
 }
 
 // =====================================================================
@@ -222,30 +188,9 @@ func runR2Sync(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-
-	cfg, log, err := boot()
-	if err != nil {
-		return err
-	}
-	if !cfg.R2Enabled() {
-		return fmt.Errorf("r2-sync: R2 is not configured (set R2_ENDPOINT/...)")
-	}
-	sqlDB, err := db.Open(cfg.AbsDBPath())
-	if err != nil {
-		return err
-	}
-	defer sqlDB.Close()
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	pipe, _, err := buildPipeline(ctx, cfg, sqlDB, log)
-	if err != nil {
-		return err
-	}
-	defer pipe.Close()
-
-	return jobs.R2Sync(ctx, log, cfg, sqlDB, pipe)
+	return withPipeline(true, func(ctx context.Context, cfg *config.Config, sqlDB *db.DB, pipe *imgpipe.Pipeline, log *slog.Logger) error {
+		return jobs.R2Sync(ctx, log, cfg, sqlDB, pipe)
+	})
 }
 
 // =====================================================================
@@ -301,14 +246,7 @@ func runImportR2(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	r2cli, err := r2.New(ctx, r2.Options{
-		Endpoint:        cfg.R2Endpoint,
-		AccessKeyID:     cfg.R2AccessKeyID,
-		SecretAccessKey: cfg.R2SecretAccessKey,
-		Bucket:          cfg.R2Bucket,
-		Region:          cfg.R2Region,
-		CDNBaseURL:      cfg.R2CDNBaseURL,
-	})
+	r2cli, err := newR2Client(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -342,14 +280,7 @@ func runPruneOrphans(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	r2cli, err := r2.New(ctx, r2.Options{
-		Endpoint:        cfg.R2Endpoint,
-		AccessKeyID:     cfg.R2AccessKeyID,
-		SecretAccessKey: cfg.R2SecretAccessKey,
-		Bucket:          cfg.R2Bucket,
-		Region:          cfg.R2Region,
-		CDNBaseURL:      cfg.R2CDNBaseURL,
-	})
+	r2cli, err := newR2Client(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -385,14 +316,7 @@ func runPruneVariants(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	r2cli, err := r2.New(ctx, r2.Options{
-		Endpoint:        cfg.R2Endpoint,
-		AccessKeyID:     cfg.R2AccessKeyID,
-		SecretAccessKey: cfg.R2SecretAccessKey,
-		Bucket:          cfg.R2Bucket,
-		Region:          cfg.R2Region,
-		CDNBaseURL:      cfg.R2CDNBaseURL,
-	})
+	r2cli, err := newR2Client(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -446,14 +370,7 @@ func buildPipeline(ctx context.Context, cfg *config.Config, sqlDB *db.DB, log *s
 
 	var r2cli *r2.Client
 	if cfg.R2Enabled() {
-		c, err := r2.New(ctx, r2.Options{
-			Endpoint:        cfg.R2Endpoint,
-			AccessKeyID:     cfg.R2AccessKeyID,
-			SecretAccessKey: cfg.R2SecretAccessKey,
-			Bucket:          cfg.R2Bucket,
-			Region:          cfg.R2Region,
-			CDNBaseURL:      cfg.R2CDNBaseURL,
-		})
+		c, err := newR2Client(ctx, cfg)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -476,6 +393,49 @@ func buildPipeline(ctx context.Context, cfg *config.Config, sqlDB *db.DB, log *s
 		return nil, nil, err
 	}
 	return pipe, r2cli, nil
+}
+
+// newR2Client builds an R2 client from config — the same six-field Options
+// literal that import-r2 / r2-prune-* / buildPipeline all need.
+func newR2Client(ctx context.Context, cfg *config.Config) (*r2.Client, error) {
+	return r2.New(ctx, r2.Options{
+		Endpoint:        cfg.R2Endpoint,
+		AccessKeyID:     cfg.R2AccessKeyID,
+		SecretAccessKey: cfg.R2SecretAccessKey,
+		Bucket:          cfg.R2Bucket,
+		Region:          cfg.R2Region,
+		CDNBaseURL:      cfg.R2CDNBaseURL,
+	})
+}
+
+// withPipeline runs fn with a fully-booted pipeline (config, DB, signal-aware
+// context, pipeline) and tears everything down afterwards. It collapses the
+// boot→open→buildPipeline→defer-Close boilerplate shared by the topup/sync
+// subcommands. Pass needR2=true to fail fast when R2 isn't configured.
+func withPipeline(needR2 bool, fn func(ctx context.Context, cfg *config.Config, sqlDB *db.DB, pipe *imgpipe.Pipeline, log *slog.Logger) error) error {
+	cfg, log, err := boot()
+	if err != nil {
+		return err
+	}
+	if needR2 && !cfg.R2Enabled() {
+		return fmt.Errorf("R2 is not configured (set R2_ENDPOINT/...)")
+	}
+	sqlDB, err := db.Open(cfg.AbsDBPath())
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	pipe, _, err := buildPipeline(ctx, cfg, sqlDB, log)
+	if err != nil {
+		return err
+	}
+	defer pipe.Close()
+
+	return fn(ctx, cfg, sqlDB, pipe, log)
 }
 
 func buildProviders(cfg *config.Config) []source.Provider {
