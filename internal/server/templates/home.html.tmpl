@@ -238,7 +238,7 @@
     <section class="section">
       <h2>示例图片</h2>
       <div class="sample-grid">
-        <article class="sample-card">
+        <article class="sample-card is-loading">
           <div class="sample-media">
             <img src="{{ .Site.BaseURL }}/1920/1080" alt="随机图" loading="lazy" decoding="async">
           </div>
@@ -259,7 +259,7 @@
           </div>
         </article>
 
-        <article class="sample-card">
+        <article class="sample-card is-loading">
           <div class="sample-media">
             <img src="{{ .Site.BaseURL }}/1920/1080?type=landscape" alt="指定类型随机图" loading="lazy" decoding="async">
           </div>
@@ -280,7 +280,7 @@
           </div>
         </article>
 
-        <article class="sample-card">
+        <article class="sample-card is-loading">
           <div class="sample-media">
             <img src="{{ .Site.BaseURL }}/1920/1080?r=749630" alt="固定图" loading="lazy" decoding="async">
           </div>
@@ -301,7 +301,7 @@
           </div>
         </article>
 
-        <article class="sample-card">
+        <article class="sample-card is-loading">
           <div class="sample-media">
             <img src="{{ .Site.BaseURL }}/1920/1080?type=beauty&r=749630" alt="固定类型图" loading="lazy" decoding="async">
           </div>
@@ -323,7 +323,7 @@
         </article>
 
         {{ if .Site.SupportsAvif }}
-          <article class="sample-card">
+          <article class="sample-card is-loading">
             <div class="sample-media">
               <img src="{{ .Site.BaseURL }}/1920/1080?type=landscape&format=avif" alt="AVIF 图" loading="lazy" decoding="async">
             </div>
@@ -345,7 +345,7 @@
           </article>
         {{ end }}
 
-        <article class="sample-card">
+        <article class="sample-card is-loading">
           <div class="sample-media">
             <img src="{{ .Site.BaseURL }}/1920/1080?type=landscape&format=webp" alt="WebP 图" loading="lazy" decoding="async">
           </div>
@@ -452,6 +452,9 @@
     </div>
   </main>
 
+  <script>
+document.querySelectorAll(".sample-card.is-loading img").forEach(function(img){var clr=function(){img.closest(".sample-card").classList.remove("is-loading")};if(img.complete&&img.naturalWidth>0)clr();else{img.addEventListener("load",clr);img.addEventListener("error",clr)}});
+</script>
   <script defer src="/assets/main.min.js"></script>
 </body>
 </html>
