@@ -185,6 +185,14 @@ func (s *Server) renderImageDetail(
 		directImageURL = s.deps.Cfg.SiteBaseURL + "/files/" + res.RelativePath
 	}
 
+	// localImageURL — always served locally from this render's exact file path,
+	// so the detail page preview matches the 直链 / Markdown / BBCode snippets
+	// (which advertise res.CDNURL → s3.img.et/<same rel>). Used only for the
+	// <img class="viewer-image">, so the preview is immediately available even
+	// before the R2 upload finishes, and always shows the same image as the
+	// snippets reference (no new random pick on a /raw=1 request).
+	localImageURL := s.deps.Cfg.SiteBaseURL + "/files/" + res.RelativePath
+
 	currentMeta := GetFileMeta(res.AbsolutePath)
 	currentFormatLabel := FormatImageFormatLabel(currentMeta.Extension)
 	if currentFormatLabel == "" {
@@ -234,6 +242,7 @@ func (s *Server) renderImageDetail(
 		"SourceLibraryCount": sourceLibraryCount,
 		"ProfileRenderCount": profileRenderCount,
 		"DirectImageURL":     directImageURL,
+		"LocalImageURL":      localImageURL,
 		"DownloadURL":        downloadURL,
 		"PageURL":            pageURL,
 		"RawImageURL":        rawImageURL,
