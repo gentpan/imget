@@ -49,6 +49,7 @@ func (p *Pipeline) uploadOne(ctx context.Context, rel string) error {
 		return err
 	}
 	if existing != nil && existing.FileSize == fi.Size() {
+		p.removeLocalVariant(rel)
 		return nil
 	}
 
@@ -62,12 +63,26 @@ func (p *Pipeline) uploadOne(ctx context.Context, rel string) error {
 	metrics.R2UploadBytes.Observe(float64(size))
 
 	cdn := p.r2c.CDNURL(rel)
-	return p.db.PutR2Upload(ctx, db.R2Upload{
+	if err := p.db.PutR2Upload(ctx, db.R2Upload{
 		FilePath: rel,
 		R2Key:    rel,
 		CDNURL:   cdn,
 		FileSize: size,
-	})
+	}); err != nil {
+		return err
+	}
+
+	p.removeLocalVariant(rel)
+	return nil
+}
+
+func (p *Pipeline) removeLocalVariant(rel string) {
+	if rel == "" || strings.HasPrefix(filepath.ToSlash(rel), "original/") {
+		return
+	}
+	if err := os.Remove(filepath.Join(p.cfg.AbsImagesDir(), rel)); err != nil && !os.IsNotExist(err) {
+		p.log.Warn("delete local rendered variant failed", "path", rel, "err", err)
+	}
 }
 
 func contentTypeForExt(ext string) string {
