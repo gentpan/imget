@@ -4,7 +4,6 @@ package imgpipe
 import (
 	"context"
 	"crypto/sha1"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -46,6 +46,11 @@ type Pipeline struct {
 	// traffic spike can spawn unbounded goroutines and exhaust memory / fds.
 	bgSem chan struct{}
 
+	// renderSem bounds concurrent libvips encodes to ~CPU count. Encoding is
+	// CPU-bound; a burst of cold-cache misses would otherwise run unbounded
+	// parallel encodes and drive load average past what the box can sustain.
+	renderSem chan struct{}
+
 	// renderLocks: per-destination mutex used to prevent thundering-herd
 	// when multiple requests arrive for the same yet-to-be-rendered file.
 	// Bounded LRU prevents long-running services from leaking ~50 bytes
@@ -70,7 +75,7 @@ type Options struct {
 	Config    *config.Config
 	DB        *db.DB
 	Encoder   *encoder.Encoder
-	R2        *r2.Client       // nil when R2 not enabled
+	R2        *r2.Client        // nil when R2 not enabled
 	Providers []source.Provider // ordered: try first, then fallback
 	Logger    *slog.Logger
 }
@@ -101,6 +106,14 @@ func New(ctx context.Context, opts Options) (*Pipeline, error) {
 	}
 	p.uploadCh = make(chan string, 256)
 	p.bgSem = make(chan struct{}, 32) // hard cap on opportunistic goroutines
+
+	// Cap parallel encodes at CPU count (min 1) so cold-miss bursts can't
+	// oversubscribe the cores libvips is already saturating per encode.
+	renderConc := runtime.GOMAXPROCS(0)
+	if renderConc < 1 {
+		renderConc = 1
+	}
+	p.renderSem = make(chan struct{}, renderConc)
 
 	// Bounded caches — LRU eviction prevents the long-running service from
 	// holding state for every unique combination ever seen.
@@ -172,14 +185,14 @@ func (p *Pipeline) QueueUpload(rel string) {
 
 // RenderRequest captures everything needed to produce a single rendered image.
 type RenderRequest struct {
-	Width    int
-	Height   int
-	Type     string // raw input, will be normalized
-	Keyword  string
-	Format   string // "webp" or "avif"; empty falls back to config default
-	Variant  string // ?r= persistent variant ID (optional)
-	Slot     string // ?s= multi-image slot ID (optional)
-	Fresh    int    // ?fresh=N — refetch N images before selecting
+	Width   int
+	Height  int
+	Type    string // raw input, will be normalized
+	Keyword string
+	Format  string // "webp" or "avif"; empty falls back to config default
+	Variant string // ?r= persistent variant ID (optional)
+	Slot    string // ?s= multi-image slot ID (optional)
+	Fresh   int    // ?fresh=N — refetch N images before selecting
 }
 
 // RenderResult describes the final cached artefact.
@@ -454,11 +467,11 @@ func (p *Pipeline) sourceUsable(rel string) bool {
 // use case behind `/{type}` and `/type/{type}` routes.
 //
 // Selection order mirrors selectSource but skips the (w,h) variant cache:
-//   1. If `fixed` is set, look it up in url_cache (LRU then SQLite) so the
-//      same r value resolves to the same image across requests.
-//   2. Local disk pool under images/original/{type}/.
-//   3. Remote source_images pool (download lazily).
-//   4. Live fetch from upstream provider chain.
+//  1. If `fixed` is set, look it up in url_cache (LRU then SQLite) so the
+//     same r value resolves to the same image across requests.
+//  2. Local disk pool under images/original/{type}/.
+//  3. Remote source_images pool (download lazily).
+//  4. Live fetch from upstream provider chain.
 //
 // Returns the same shape of `rel` (e.g. "original/landscape/abc.jpg") used
 // elsewhere. Callers can map that to a CDN URL via the r2_uploads table,
@@ -645,14 +658,4 @@ func (p *Pipeline) CDNBase() string {
 		return ""
 	}
 	return p.r2c.CDNURL("")
-}
-
-// nullableSourceCDN unused helper (kept as utility — wraps CDN url in sql.NullString).
-//
-//nolint:unused
-func nullableSourceCDN(s string) sql.NullString {
-	if s == "" {
-		return sql.NullString{}
-	}
-	return sql.NullString{String: s, Valid: true}
 }

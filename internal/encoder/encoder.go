@@ -50,7 +50,7 @@ var initOnce sync.Once
 func Init() {
 	initOnce.Do(func() {
 		vips.LoggingSettings(nil, vips.LogLevelError) // suppress info/debug spam
-		vips.Startup(nil)                              // default config
+		vips.Startup(nil)                             // default config
 
 		// Warmup: decode an embedded 1x1 PNG. We don't care about the
 		// result — only side effects (thread pool init, JIT loading).
@@ -137,22 +137,6 @@ func (e *Encoder) RenderToFile(ctx context.Context, srcPath, dstPath string, wid
 	return nil
 }
 
-// EncodeFromFile re-encodes an existing local file (JPEG/PNG/WebP/AVIF/...)
-// into dstPath without resizing. Used by the procedural fallback writer.
-func (e *Encoder) EncodeFromFile(srcPath, dstPath string, format Format) error {
-	img, err := vips.NewImageFromFile(srcPath)
-	if err != nil {
-		return err
-	}
-	defer img.Close()
-	tmp := dstPath + ".part"
-	defer os.Remove(tmp)
-	if err := e.exportTo(img, format, tmp); err != nil {
-		return err
-	}
-	return os.Rename(tmp, dstPath)
-}
-
 // Probe returns (width, height) for the given file by loading just its header.
 // Works for every format libvips understands, including AVIF.
 func Probe(srcPath string) (int, int, error) {
@@ -178,8 +162,8 @@ func (e *Encoder) exportTo(img *vips.ImageRef, format Format, dstPath string) er
 		return os.WriteFile(dstPath, buf, 0o644)
 	case FormatAVIF:
 		buf, _, err := img.ExportAvif(&vips.AvifExportParams{
-			Quality: e.opts.AVIFQuality,
-			Speed:   e.opts.AVIFSpeed,
+			Quality:  e.opts.AVIFQuality,
+			Speed:    e.opts.AVIFSpeed,
 			Lossless: false,
 		})
 		if err != nil {

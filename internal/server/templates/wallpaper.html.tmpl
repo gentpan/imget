@@ -7,7 +7,7 @@
     <title>{{ .TypeLabel }} 壁纸 - {{ .Site.Name }}</title>
     {{ if .Site.HasFontAwesome }}<link rel="stylesheet" href="{{ .Site.FontAwesomeCSSURL }}">{{ end }}
     {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
-    <link rel="stylesheet" href="/assets/main.min.css?v=2026051201">
+    <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
 </head>
 
 <body class="page-image-detail">
@@ -88,7 +88,7 @@
             </div>
         </section>
     </main>
-    <script defer src="/assets/main.min.js"></script>
+    <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
 </body>
 
 </html>

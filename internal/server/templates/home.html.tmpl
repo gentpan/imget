@@ -23,7 +23,7 @@
   <link rel="shortcut icon" href="/favicon.ico">
   {{ if .Site.HasFontAwesome }}<link rel="stylesheet" href="{{ .Site.FontAwesomeCSSURL }}">{{ end }}
   {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
-  <link rel="stylesheet" href="/assets/main.min.css?v=2026051201">
+  <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
 
 </head>
 <body class="page-home" data-site-base-url="{{ .Site.BaseURL }}">
@@ -455,6 +455,6 @@
   <script>
 document.querySelectorAll(".sample-card.is-loading img").forEach(function(img){var clr=function(){img.closest(".sample-card").classList.remove("is-loading")};if(img.complete&&img.naturalWidth>0)clr();else{img.addEventListener("load",clr);img.addEventListener("error",clr)}});
 </script>
-  <script defer src="/assets/main.min.js"></script>
+  <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
 </body>
 </html>

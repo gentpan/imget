@@ -23,8 +23,6 @@ func PruneR2Orphans(
 	client *r2.Client,
 	dryRun bool,
 ) error {
-	const batchSize = 1000
-
 	// 1. Load every key that the DB still considers "ours" into a set.
 	// Union r2_uploads + source_images so we don't accidentally delete a
 	// frozen import-r2 row that hasn't been touched since deploy.
@@ -65,28 +63,9 @@ func PruneR2Orphans(
 		total       int64
 		orphans     int64
 		bytesToFree int64
-		toDelete    []string
-		flushed     int64
 	)
 
-	flush := func() error {
-		if len(toDelete) == 0 {
-			return nil
-		}
-		if dryRun {
-			toDelete = toDelete[:0]
-			return nil
-		}
-		if err := client.DeleteBatch(ctx, toDelete); err != nil {
-			return err
-		}
-		flushed += int64(len(toDelete))
-		log.Info("prune progress",
-			"deleted_total", flushed,
-			"still_pending", orphans-flushed)
-		toDelete = toDelete[:0]
-		return nil
-	}
+	bd := newBatchDeleter(client, log, dryRun, "prune-orphans")
 
 	start := time.Now()
 	if err := client.ListAll(ctx, "", func(o r2.ObjectInfo) error {
@@ -96,21 +75,17 @@ func PruneR2Orphans(
 		}
 		orphans++
 		bytesToFree += o.Size
-		toDelete = append(toDelete, o.Key)
 		// Surface a handful of examples for the operator before deletion.
 		if orphans <= 5 {
 			log.Info("orphan example",
 				"key", o.Key,
 				"size", o.Size)
 		}
-		if len(toDelete) >= batchSize {
-			return flush()
-		}
-		return nil
+		return bd.add(ctx, o.Key)
 	}); err != nil {
 		return err
 	}
-	if err := flush(); err != nil {
+	if err := bd.flush(ctx); err != nil {
 		return err
 	}
 
