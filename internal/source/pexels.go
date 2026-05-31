@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -29,10 +28,7 @@ type PexelsConfig struct {
 type Pexels struct {
 	cfg PexelsConfig
 	hc  *http.Client
-
-	mu            sync.Mutex
-	lastRequestAt time.Time
-	cooldownUntil time.Time
+	lim *Limiter
 }
 
 func NewPexels(cfg PexelsConfig) *Pexels {
@@ -49,7 +45,7 @@ func NewPexels(cfg PexelsConfig) *Pexels {
 	if hc == nil {
 		hc = &http.Client{Timeout: 20 * time.Second}
 	}
-	return &Pexels{cfg: cfg, hc: hc}
+	return &Pexels{cfg: cfg, hc: hc, lim: NewLimiter(cfg.MinIntervalMS, cfg.CooldownSec)}
 }
 
 func (p *Pexels) Name() string { return "pexels" }
@@ -62,7 +58,7 @@ func (p *Pexels) FetchURLs(ctx context.Context, req Request) ([]string, error) {
 	if !p.Configured() {
 		return nil, nil
 	}
-	if err := p.waitForSlot(ctx); err != nil {
+	if err := p.lim.Wait(ctx); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +104,7 @@ func (p *Pexels) FetchURLs(ctx context.Context, req Request) ([]string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusTooManyRequests {
-		p.markCooldown()
+		p.lim.MarkCooldown()
 		return nil, errors.New("pexels: 429 rate limited")
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -158,38 +154,4 @@ func pexelsOrientation(typ string) string {
 		return "landscape"
 	}
 	return ""
-}
-
-func (p *Pexels) waitForSlot(ctx context.Context) error {
-	p.mu.Lock()
-	now := time.Now()
-	var sleep time.Duration
-	if !p.cooldownUntil.IsZero() && now.Before(p.cooldownUntil) {
-		sleep = p.cooldownUntil.Sub(now)
-	}
-	if next := p.lastRequestAt.Add(time.Duration(p.cfg.MinIntervalMS) * time.Millisecond); now.Before(next) {
-		if d := next.Sub(now); d > sleep {
-			sleep = d
-		}
-	}
-	p.lastRequestAt = now.Add(sleep)
-	p.mu.Unlock()
-
-	if sleep <= 0 {
-		return nil
-	}
-	t := time.NewTimer(sleep)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-t.C:
-		return nil
-	}
-}
-
-func (p *Pexels) markCooldown() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.cooldownUntil = time.Now().Add(time.Duration(p.cfg.CooldownSec) * time.Second)
 }

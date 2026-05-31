@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"imget/internal/db"
 	"imget/internal/imgpipe"
+	"imget/internal/mediatype"
 	"imget/internal/source"
 )
 
@@ -100,6 +102,14 @@ func (s *Server) handleImage(w http.ResponseWriter, r *http.Request, width, heig
 		return
 	}
 
+	// Metrics beacon: the detail page JS POSTs ?__track=1&event=download here
+	// (see main.min.js → trackMetric). Bump the counter and return fresh JSON
+	// counts without re-rendering an image. (view is counted on detail render.)
+	if q.Get("__track") == "1" {
+		s.handleTrackBeacon(w, r, width, height, typ, keyword)
+		return
+	}
+
 	// Preparing page: HTML request + no source for type yet → kick off async fetch + show spinner.
 	if wantsHTML && !s.deps.Pipeline.HasAnyOriginal(r.Context(), typ) {
 		initial := s.deps.Cfg.InitialPrefetchCount
@@ -150,10 +160,19 @@ func (s *Server) handleImage(w http.ResponseWriter, r *http.Request, width, heig
 	w.Header().Set("Vary", "Accept, Sec-Fetch-Dest, Sec-Fetch-Mode")
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 
-	// Prefer redirect to CDN if configured.
-	if s.deps.Cfg.R2RedirectDirect && res.CDNURL != "" {
-		http.Redirect(w, r, res.CDNURL, http.StatusFound)
-		return
+	// Prefer redirect to CDN, but ONLY once the upload is confirmed.
+	//
+	// res.CDNURL is computed eagerly (deterministic CDN_BASE + rel) before the
+	// async upload finishes, so redirecting to it on a freshly-rendered variant
+	// 404s at the CDN until the upload lands. CDNURLFor reads r2_uploads → it is
+	// non-empty only after the upload row exists. This mirrors the guard the
+	// /files/* and wallpaper paths already use, and the detail-page preview fix
+	// (commit ea1733b) — the raw path was the remaining hole.
+	if s.deps.Cfg.R2RedirectDirect {
+		if cdn := s.deps.Pipeline.CDNURLFor(r.Context(), res.RelativePath); cdn != "" {
+			http.Redirect(w, r, cdn, http.StatusFound)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", contentTypeFor(res.Format))
@@ -199,9 +218,16 @@ func (s *Server) renderImageDetail(
 		currentFormatLabel = FormatImageFormatLabel(res.Format)
 	}
 
-	// Profile metrics (view + download counts).
+	// Profile metrics (view + download counts). Count this detail-page view
+	// synchronously: detail pages are no-store and far rarer than raw-image
+	// hits, so a single UPDATE here is cheap (the hot raw path stays batched).
+	// The profile row is guaranteed to exist — Render() registered it above.
+	profileKey := db.ProfileKey(width, height, typ, keyword)
+	if err := s.deps.DB.IncrementProfileMetric(r.Context(), profileKey, "view"); err != nil {
+		s.deps.Logger.Warn("view increment failed", "err", err)
+	}
 	var viewCount, downloadCount int64
-	if prof, _ := s.deps.DB.GetProfile(r.Context(), db.ProfileKey(width, height, typ, keyword)); prof != nil {
+	if prof, _ := s.deps.DB.GetProfile(r.Context(), profileKey); prof != nil {
 		viewCount = prof.ViewCount
 		downloadCount = prof.DownloadCount
 	}
@@ -371,6 +397,35 @@ func (s *Server) handleFileDetail(w http.ResponseWriter, r *http.Request, typ, f
 	}
 }
 
+// handleTrackBeacon records a view/download event for a (w,h,type,keyword)
+// profile and replies with the fresh counts as JSON. Called from handleImage
+// when ?__track=1 is present. The increment is a single synchronous UPDATE —
+// these beacons fire only on user interaction (detail-page download), never on
+// the raw-image hot path, so they don't need the in-memory batcher.
+func (s *Server) handleTrackBeacon(w http.ResponseWriter, r *http.Request, width, height int, typ, keyword string) {
+	key := db.ProfileKey(width, height, typ, keyword)
+	switch r.URL.Query().Get("event") {
+	case "view", "download":
+		if err := s.deps.DB.IncrementProfileMetric(r.Context(), key, r.URL.Query().Get("event")); err != nil {
+			s.deps.Logger.Warn("track increment failed", "err", err)
+		}
+	}
+
+	var viewCount, downloadCount int64
+	if prof, _ := s.deps.DB.GetProfile(r.Context(), key); prof != nil {
+		viewCount = prof.ViewCount
+		downloadCount = prof.DownloadCount
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok":             true,
+		"view_count":     viewCount,
+		"download_count": downloadCount,
+	})
+}
+
 // ============================================================
 // shared helpers
 // ============================================================
@@ -436,18 +491,5 @@ func firstValue(q map[string][]string, keys ...string) string {
 }
 
 func contentTypeFor(formatOrExt string) string {
-	switch strings.ToLower(strings.TrimPrefix(formatOrExt, ".")) {
-	case "webp":
-		return "image/webp"
-	case "avif":
-		return "image/avif"
-	case "jpg", "jpeg":
-		return "image/jpeg"
-	case "png":
-		return "image/png"
-	case "gif":
-		return "image/gif"
-	}
-	return "application/octet-stream"
+	return mediatype.ForExt(formatOrExt)
 }
-

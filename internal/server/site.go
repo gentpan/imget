@@ -9,9 +9,17 @@ import (
 	"imget/internal/source"
 )
 
+// assetVersion is the single source of truth for the static-asset cache-buster
+// (?v=...). Bump it whenever main.min.css/js change; templates read it via
+// {{ .Site.AssetVersion }} instead of hardcoding the value per <link>/<script>.
+const assetVersion = "2026051201"
+
 // SiteContext is the slice of config that every page template needs.
 // It is built once at server startup and reused for every render.
 type SiteContext struct {
+	// AssetVersion is the static-asset cache-buster appended to CSS/JS URLs.
+	AssetVersion string
+
 	Name              string
 	Tagline           string
 	BaseURL           string
@@ -93,6 +101,7 @@ func newSiteContext(cfg *config.Config, enc *encoder.Encoder) SiteContext {
 	}
 
 	return SiteContext{
+		AssetVersion:         assetVersion,
 		Name:                 cfg.SiteName,
 		Tagline:              cfg.SiteTagline,
 		BaseURL:              cfg.SiteBaseURL,

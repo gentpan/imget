@@ -12,10 +12,6 @@ import (
 	"imget/internal/imgpipe"
 )
 
-// UploadOneInline is a thin alias kept here so callers don't reach inside the
-// pipeline package for a single sync upload.
-var _ = db.R2Upload{}
-
 // R2Sync walks the local images/ tree and uploads anything not yet recorded
 // in r2_uploads. Idempotent.
 func R2Sync(ctx context.Context, log *slog.Logger, cfg *config.Config, sqlDB *db.DB, pipe *imgpipe.Pipeline) error {
