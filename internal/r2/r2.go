@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
@@ -32,6 +33,8 @@ type Options struct {
 	Region          string
 	CDNBaseURL      string
 }
+
+const multipartThreshold = 16 * 1024 * 1024
 
 func New(ctx context.Context, opts Options) (*Client, error) {
 	if opts.Endpoint == "" || opts.Bucket == "" {
@@ -92,14 +95,22 @@ func (c *Client) PutFile(ctx context.Context, localPath, key, contentType string
 		contentType = "application/octet-stream"
 	}
 
-	_, err = c.s3.PutObject(ctx, &s3.PutObjectInput{
+	input := &s3.PutObjectInput{
 		Bucket:        aws.String(c.bucket),
 		Key:           aws.String(key),
 		Body:          f,
 		ContentType:   aws.String(contentType),
 		ContentLength: aws.Int64(size),
 		CacheControl:  aws.String("public, max-age=31536000, immutable"),
-	})
+	}
+	if size > multipartThreshold {
+		uploader := manager.NewUploader(c.s3, func(u *manager.Uploader) {
+			u.PartSize = multipartThreshold
+		})
+		_, err = uploader.Upload(ctx, input)
+	} else {
+		_, err = c.s3.PutObject(ctx, input)
+	}
 	if err != nil {
 		return 0, fmt.Errorf("r2: put %s: %w", key, err)
 	}

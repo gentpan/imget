@@ -46,6 +46,11 @@ func R2Sync(ctx context.Context, log *slog.Logger, cfg *config.Config, sqlDB *db
 		rel = filepath.ToSlash(rel)
 
 		if u, _ := sqlDB.GetR2Upload(ctx, rel); u != nil {
+			if !strings.HasPrefix(rel, "original/") {
+				if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+					log.Warn("r2sync local variant delete failed", "path", rel, "err", err)
+				}
+			}
 			skipped++
 			return nil
 		}
