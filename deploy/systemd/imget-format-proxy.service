@@ -1,0 +1,14 @@
+[Unit]
+Description=imget format negotiation proxy
+After=network.target imget.service
+Requires=imget.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /opt/imget-format-proxy/imget-format-proxy.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
