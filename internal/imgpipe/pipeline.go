@@ -525,6 +525,16 @@ func (p *Pipeline) PickOriginal(ctx context.Context, typ, keyword, fixed string)
 	return rel, nil
 }
 
+// PickLargestOriginal returns the largest local original for category preview
+// pages. It falls back to the regular picker when the local pool is empty.
+func (p *Pipeline) PickLargestOriginal(ctx context.Context, typ string) (string, error) {
+	typ = source.NormalizeType(typ)
+	if rel := p.pickLargestLocalOriginal(typ); rel != "" {
+		return rel, nil
+	}
+	return p.PickOriginal(ctx, typ, "", "")
+}
+
 // EnsureSourceLocal exposes ensureSourceLocal so handlers can stream the
 // original file when CDN redirect is disabled or unavailable.
 func (p *Pipeline) EnsureSourceLocal(ctx context.Context, rel string) (string, error) {
@@ -558,6 +568,50 @@ func (p *Pipeline) pickLocalOriginal(typ, slot string) string {
 
 	idx := pseudoRandIndex(slot, len(files))
 	return filepath.ToSlash(filepath.Join("original", typ, files[idx]))
+}
+
+func (p *Pipeline) pickLargestLocalOriginal(typ string) string {
+	dir := filepath.Join(p.cfg.AbsImagesDir(), "original", typ)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return ""
+	}
+
+	bestName := ""
+	var bestPixels int64
+	var bestSize int64
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		lower := strings.ToLower(name)
+		if strings.HasPrefix(name, ".") ||
+			strings.Contains(lower, "fallback") ||
+			!encoder.SupportedExt(filepath.Ext(name)) {
+			continue
+		}
+
+		abs := filepath.Join(dir, name)
+		width, height, err := encoder.Probe(abs)
+		if err != nil || width <= 0 || height <= 0 {
+			continue
+		}
+		pixels := int64(width) * int64(height)
+		size := int64(0)
+		if info, err := e.Info(); err == nil {
+			size = info.Size()
+		}
+		if pixels > bestPixels || (pixels == bestPixels && size > bestSize) {
+			bestName = name
+			bestPixels = pixels
+			bestSize = size
+		}
+	}
+	if bestName == "" {
+		return ""
+	}
+	return filepath.ToSlash(filepath.Join("original", typ, bestName))
 }
 
 // pickRemoteOriginal returns the relative key (= R2 key for source pool images),

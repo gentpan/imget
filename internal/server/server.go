@@ -229,16 +229,22 @@ func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, ra
 	keyword := sanitizeKeyword(r.URL.Query().Get("keyword"))
 	fixed := strings.TrimSpace(r.URL.Query().Get("r"))
 
-	rel, err := s.deps.Pipeline.PickOriginal(r.Context(), typ, keyword, fixed)
+	rawRequested := r.URL.Query().Get("raw") == "1" ||
+		strings.EqualFold(r.Header.Get("Sec-Fetch-Dest"), "image")
+	wantsHTML := strings.Contains(r.Header.Get("Accept"), "text/html") && !rawRequested
+
+	var rel string
+	var err error
+	if wantsHTML && keyword == "" && fixed == "" {
+		rel, err = s.deps.Pipeline.PickLargestOriginal(r.Context(), typ)
+	} else {
+		rel, err = s.deps.Pipeline.PickOriginal(r.Context(), typ, keyword, fixed)
+	}
 	if err != nil || rel == "" {
 		s.deps.Logger.Warn("wallpaper pick failed", "type", typ, "err", err)
 		http.Error(w, "no source available", http.StatusServiceUnavailable)
 		return
 	}
-
-	rawRequested := r.URL.Query().Get("raw") == "1" ||
-		strings.EqualFold(r.Header.Get("Sec-Fetch-Dest"), "image")
-	wantsHTML := strings.Contains(r.Header.Get("Accept"), "text/html") && !rawRequested
 
 	if wantsHTML {
 		s.renderWallpaperDetail(w, r, rel, typ, keyword, fixed)
