@@ -1,0 +1,16 @@
+[Unit]
+Wants=imget-format-proxy.service
+Description=imget image service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/imget
+Environment=GOMEMLIMIT=10GiB
+ExecStart=/opt/imget/imget serve
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
