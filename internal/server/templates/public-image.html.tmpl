@@ -26,6 +26,13 @@
                 <a class="action" href="{{ .RawURL }}" target="_blank" rel="noreferrer">打开图片</a>
                 <a class="action" href="{{ .DownloadURL }}">下载图片</a>
             </div>
+            {{ if .TransformLinks }}
+            <div class="actions">
+                {{ range .TransformLinks }}
+                <a class="action" href="{{ .Value }}" target="_blank" rel="noreferrer">{{ .Label }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
             <div class="grid">
                 <div class="stat"><strong>类型</strong><span>{{ .Type }}</span></div>
                 <div class="stat"><strong>文件名</strong><span>{{ .FileName }}</span></div>

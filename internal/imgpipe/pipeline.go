@@ -211,27 +211,9 @@ func (p *Pipeline) Render(ctx context.Context, req RenderRequest) (*RenderResult
 	w, h := clampDim(req.Width, p.cfg.MinDim, p.cfg.MaxDim), clampDim(req.Height, p.cfg.MinDim, p.cfg.MaxDim)
 	keyword := strings.TrimSpace(req.Keyword)
 
-	format := strings.ToLower(strings.TrimSpace(req.Format))
-	if format == "" {
-		format = p.cfg.DefaultFormat
-	}
-	if format != "webp" && format != "avif" {
-		format = "webp"
-	}
-	// Honor operator's ENABLED_FORMATS allow-list AND encoder availability.
-	enabled := p.cfg.FormatEnabled(format) && p.enc.Available(encoder.Format(format))
-	if !enabled {
-		// Fall back to any other enabled+available format.
-		alt := ""
-		if format != "webp" && p.cfg.FormatEnabled("webp") && p.enc.Available(encoder.FormatWebP) {
-			alt = "webp"
-		} else if format != "avif" && p.cfg.FormatEnabled("avif") && p.enc.Available(encoder.FormatAVIF) {
-			alt = "avif"
-		}
-		if alt == "" {
-			return nil, fmt.Errorf("format %q not enabled or no encoder available", format)
-		}
-		format = alt
+	format, err := p.resolveRenderFormat(req.Format)
+	if err != nil {
+		return nil, err
 	}
 
 	// Register profile (best effort).
@@ -249,6 +231,48 @@ func (p *Pipeline) Render(ctx context.Context, req RenderRequest) (*RenderResult
 		return nil, errors.New("no image source available")
 	}
 
+	return p.renderFromSource(ctx, sourceRel, typ, w, h, format, isFallback)
+}
+
+// RenderSource renders a requested size/format from one exact source original.
+func (p *Pipeline) RenderSource(ctx context.Context, sourceRel, typ string, width, height int, format string) (*RenderResult, error) {
+	typ = source.NormalizeType(typ)
+	w, h := clampDim(width, p.cfg.MinDim, p.cfg.MaxDim), clampDim(height, p.cfg.MinDim, p.cfg.MaxDim)
+	resolvedFormat, err := p.resolveRenderFormat(format)
+	if err != nil {
+		return nil, err
+	}
+	return p.renderFromSource(ctx, filepath.ToSlash(sourceRel), typ, w, h, resolvedFormat, false)
+}
+
+func (p *Pipeline) resolveRenderFormat(requested string) (string, error) {
+	format := strings.ToLower(strings.TrimSpace(requested))
+	if format == "" {
+		format = p.cfg.DefaultFormat
+	}
+	if format != "webp" && format != "avif" {
+		format = "webp"
+	}
+	// Honor operator's ENABLED_FORMATS allow-list AND encoder availability.
+	enabled := p.cfg.FormatEnabled(format) && p.enc.Available(encoder.Format(format))
+	if !enabled {
+		// Fall back to any other enabled+available format.
+		alt := ""
+		if format != "webp" && p.cfg.FormatEnabled("webp") && p.enc.Available(encoder.FormatWebP) {
+			alt = "webp"
+		} else if format != "avif" && p.cfg.FormatEnabled("avif") && p.enc.Available(encoder.FormatAVIF) {
+			alt = "avif"
+		}
+		if alt == "" {
+			return "", fmt.Errorf("format %q not enabled or no encoder available", format)
+		}
+		format = alt
+	}
+
+	return format, nil
+}
+
+func (p *Pipeline) renderFromSource(ctx context.Context, sourceRel, typ string, w, h int, format string, isFallback bool) (*RenderResult, error) {
 	// Compute deterministic render destination.
 	renderRel := p.renderDestRel(sourceRel, typ, w, h, format)
 	renderAbs := filepath.Join(p.cfg.AbsImagesDir(), renderRel)
