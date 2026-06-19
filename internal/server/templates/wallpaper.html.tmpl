@@ -84,7 +84,15 @@
                   当前短链每次访问随机返回一张 <strong>{{ .TypeLabel }}</strong> 原图。需要固定一张？在 URL 末尾加 <code>?r=任意数字</code>。
                 {{ end }}
                 {{ if .Keyword }} 当前关键词 <code>{{ .Keyword }}</code>。{{ end }}
-                <a href="{{ .ShortURL }}">点这里刷新一张</a>。
+                <a class="refresh-wallpaper-btn" href="{{ .ShortURL }}" aria-label="刷新一张{{ .TypeLabel }}原图">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                        <path d="M21 12a9 9 0 0 1-15.3 6.4"></path>
+                        <path d="M3 12A9 9 0 0 1 18.3 5.6"></path>
+                        <path d="M18 2v4h-4"></path>
+                        <path d="M6 22v-4h4"></path>
+                    </svg>
+                    <span>刷新一张</span>
+                </a>
             </div>
         </section>
     </main>
