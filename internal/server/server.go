@@ -111,6 +111,9 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) {
 		case "files":
 			s.handleFileDirect(w, r, parts[1], parts[2])
 			return
+		case "c":
+			s.handleFileDirect(w, r, parts[1], parts[2])
+			return
 		case "p":
 			s.handleFileDetail(w, r, parts[1], parts[2])
 			return
@@ -306,18 +309,15 @@ func (s *Server) renderWallpaperDetail(w http.ResponseWriter, r *http.Request, r
 
 	filename := filepath.Base(rel)
 	downloadURL := s.deps.Cfg.SiteBaseURL + "/files/" + typ + "/" + filename + "?download=1"
-
-	htmlSnippet := `<img src="` + shortURL + `" alt="` + typ + `">`
-	mdSnippet := "![" + typ + "](" + shortURL + ")"
-	bbSnippet := "[img]" + shortURL + "[/img]"
+	transformPath := "/c/" + typ + "/" + filename
+	dedicatedPageURL := s.deps.Cfg.SiteBaseURL + "/p/files/" + typ + "/" + filename
 
 	formats := []formatRow{
 		{"短链", shortURL},
 		{"直链", rawURL},
-		{"HTML", htmlSnippet},
-		{"Markdown", mdSnippet},
-		{"BBCode", bbSnippet},
+		{"专属页面", dedicatedPageURL},
 	}
+	formats = append(formats, s.buildFileTransformRows(transformPath, meta)...)
 
 	data := map[string]any{
 		"Site":         s.site,
@@ -329,6 +329,7 @@ func (s *Server) renderWallpaperDetail(w http.ResponseWriter, r *http.Request, r
 		"ShortURL":     shortURL,
 		"HasQuery":     hasQuery,
 		"RawURL":       rawURL,
+		"PageURL":      dedicatedPageURL,
 		"DownloadURL":  downloadURL,
 		"Meta":         meta,
 		"PoolCount":    s.deps.Pipeline.CountOriginalsForType(typ),

@@ -311,6 +311,22 @@ func (s *Server) renderPreparing(w http.ResponseWriter, r *http.Request, width, 
 
 func (s *Server) handleFileDirect(w http.ResponseWriter, r *http.Request, typ, file string) {
 	rel := filepath.ToSlash(filepath.Join(typ, file))
+	abs := filepath.Join(s.deps.Cfg.AbsImagesDir(), rel)
+	if _, err := os.Stat(abs); err != nil {
+		alt := filepath.Join(s.deps.Cfg.AbsImagesDir(), "original", typ, file)
+		if _, err := os.Stat(alt); err == nil {
+			abs = alt
+			rel = filepath.ToSlash(filepath.Join("original", typ, file))
+		} else {
+			http.NotFound(w, r)
+			return
+		}
+	}
+
+	if w_, h_, format, ok := s.fileTransformRequest(r, abs); ok {
+		s.handleFileTransform(w, r, typ, rel, w_, h_, format)
+		return
+	}
 
 	if s.deps.Cfg.R2RedirectDirect {
 		if cdn := s.deps.Pipeline.CDNURLFor(r.Context(), rel); cdn != "" {
@@ -321,16 +337,6 @@ func (s *Server) handleFileDirect(w http.ResponseWriter, r *http.Request, typ, f
 		}
 	}
 
-	abs := filepath.Join(s.deps.Cfg.AbsImagesDir(), rel)
-	if _, err := os.Stat(abs); err != nil {
-		alt := filepath.Join(s.deps.Cfg.AbsImagesDir(), "original", typ, file)
-		if _, err := os.Stat(alt); err == nil {
-			abs = alt
-		} else {
-			http.NotFound(w, r)
-			return
-		}
-	}
 	w.Header().Set("Vary", "Accept, Sec-Fetch-Dest, Sec-Fetch-Mode")
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.Header().Set("Content-Type", contentTypeFor(strings.TrimPrefix(filepath.Ext(file), ".")))
@@ -338,6 +344,60 @@ func (s *Server) handleFileDirect(w http.ResponseWriter, r *http.Request, typ, f
 		w.Header().Set("Content-Disposition", `attachment; filename="`+file+`"`)
 	}
 	http.ServeFile(w, r, abs)
+}
+
+func (s *Server) fileTransformRequest(r *http.Request, abs string) (int, int, string, bool) {
+	q := r.URL.Query()
+	format := firstValue(q, "format", "f")
+	widthStr := firstValue(q, "w", "width")
+	heightStr := firstValue(q, "h", "height")
+	if format == "" && widthStr == "" && heightStr == "" {
+		return 0, 0, "", false
+	}
+
+	meta := GetFileMeta(abs)
+	width, height := meta.Width, meta.Height
+	if widthStr != "" {
+		if v, err := strconv.Atoi(widthStr); err == nil {
+			width = v
+		}
+	}
+	if heightStr != "" {
+		if v, err := strconv.Atoi(heightStr); err == nil {
+			height = v
+		}
+	}
+	return width, height, format, true
+}
+
+func (s *Server) handleFileTransform(w http.ResponseWriter, r *http.Request, typ, sourceRel string, width, height int, format string) {
+	if width < s.deps.Cfg.MinDim || height < s.deps.Cfg.MinDim ||
+		width > s.deps.Cfg.MaxDim || height > s.deps.Cfg.MaxDim {
+		s.renderError(w, r, http.StatusBadRequest, "尺寸超出允许范围",
+			"宽高需在 "+strconv.Itoa(s.deps.Cfg.MinDim)+" ~ "+strconv.Itoa(s.deps.Cfg.MaxDim)+" 之间")
+		return
+	}
+
+	res, err := s.deps.Pipeline.RenderSource(r.Context(), sourceRel, typ, width, height, format)
+	if err != nil {
+		s.deps.Logger.Warn("file transform failed", "source", sourceRel, "err", err)
+		s.renderError(w, r, http.StatusServiceUnavailable, "暂时无法生成图片", err.Error())
+		return
+	}
+
+	if r.URL.Query().Get("download") == "1" {
+		w.Header().Set("Content-Disposition", `attachment; filename="`+filepath.Base(res.RelativePath)+`"`)
+	}
+	w.Header().Set("Vary", "Accept, Sec-Fetch-Dest, Sec-Fetch-Mode")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	if s.deps.Cfg.R2RedirectDirect {
+		if cdn := s.deps.Pipeline.CDNURLFor(r.Context(), res.RelativePath); cdn != "" {
+			http.Redirect(w, r, cdn, http.StatusFound)
+			return
+		}
+	}
+	w.Header().Set("Content-Type", contentTypeFor(res.Format))
+	http.ServeFile(w, r, res.AbsolutePath)
 }
 
 // ============================================================
@@ -361,6 +421,9 @@ func (s *Server) handleFileDetail(w http.ResponseWriter, r *http.Request, typ, f
 		if _, err := os.Stat(alt); err == nil {
 			abs = alt
 			rel = filepath.ToSlash(filepath.Join("original", typ, file))
+		} else {
+			http.NotFound(w, r)
+			return
 		}
 	}
 
@@ -373,21 +436,24 @@ func (s *Server) handleFileDetail(w http.ResponseWriter, r *http.Request, typ, f
 
 	pagePath := "/p/" + rel
 	if mode == "file" {
-		pagePath = "/p/files/" + rel
+		pagePath = "/p/files/" + typ + "/" + file
 	}
 	pageURL := s.deps.Cfg.SiteBaseURL + pagePath
 
 	meta := GetFileMeta(abs)
+	transformPath := "/c/" + typ + "/" + file
+	transformLinks := s.buildFileTransformRows(transformPath, meta)
 
 	data := map[string]any{
-		"Site":        s.site,
-		"Type":        typ,
-		"FileName":    filepath.Base(rel),
-		"PageURL":     pageURL,
-		"RawURL":      rawURL,
-		"DownloadURL": downloadURL,
-		"HomeURL":     s.deps.Cfg.SiteBaseURL + "/",
-		"Meta":        meta,
+		"Site":           s.site,
+		"Type":           typ,
+		"FileName":       filepath.Base(rel),
+		"PageURL":        pageURL,
+		"RawURL":         rawURL,
+		"DownloadURL":    downloadURL,
+		"HomeURL":        s.deps.Cfg.SiteBaseURL + "/",
+		"Meta":           meta,
+		"TransformLinks": transformLinks,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
@@ -475,6 +541,56 @@ func appendQuery(path, key, value string) string {
 		sep = "&"
 	}
 	return path + sep + url.QueryEscape(key) + "=" + url.QueryEscape(value)
+}
+
+func (s *Server) buildFileTransformRows(publicPath string, meta FileMeta) []formatRow {
+	if meta.Width <= 0 || meta.Height <= 0 {
+		return nil
+	}
+	base := s.deps.Cfg.SiteBaseURL + publicPath
+	rows := make([]formatRow, 0, 6)
+
+	add := func(label string, width, height int, format string) {
+		if width < s.deps.Cfg.MinDim || height < s.deps.Cfg.MinDim ||
+			width > s.deps.Cfg.MaxDim || height > s.deps.Cfg.MaxDim {
+			return
+		}
+		u, err := url.Parse(base)
+		if err != nil {
+			return
+		}
+		q := u.Query()
+		q.Set("w", strconv.Itoa(width))
+		q.Set("h", strconv.Itoa(height))
+		q.Set("format", format)
+		u.RawQuery = q.Encode()
+		rows = append(rows, formatRow{label, u.String()})
+	}
+
+	maxW, maxH := fitWithin(meta.Width, meta.Height, s.deps.Cfg.MaxDim)
+	add("最大尺寸 WebP", maxW, maxH, "webp")
+	if s.site.SupportsAvif {
+		add("最大尺寸 AVIF", maxW, maxH, "avif")
+	}
+	add("3840 x 2160 WebP", 3840, 2160, "webp")
+	if s.site.SupportsAvif {
+		add("3840 x 2160 AVIF", 3840, 2160, "avif")
+	}
+	add("1920 x 1080 WebP", 1920, 1080, "webp")
+	if s.site.SupportsAvif {
+		add("1920 x 1080 AVIF", 1920, 1080, "avif")
+	}
+	return rows
+}
+
+func fitWithin(width, height, maxDim int) (int, int) {
+	if width <= maxDim && height <= maxDim {
+		return width, height
+	}
+	if width >= height {
+		return maxDim, height * maxDim / width
+	}
+	return width * maxDim / height, maxDim
 }
 
 func firstValue(q map[string][]string, keys ...string) string {
