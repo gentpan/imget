@@ -1,36 +1,6 @@
 /* fonts.css — webfonts hosted on static.bluecdn.com */
-
-@font-face {
-  font-family: "Ubuntu";
-  src: url("https://static.bluecdn.com/fonts/ubuntu-400.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Ubuntu";
-  src: url("https://static.bluecdn.com/fonts/ubuntu-500.woff2") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Ubuntu";
-  src: url("https://static.bluecdn.com/fonts/ubuntu-700.woff2") format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Google Sans Code";
-  src: url("https://static.bluecdn.com/fonts/google-sans-code-400.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Google Sans Code";
-  src: url("https://static.bluecdn.com/fonts/google-sans-code-700.woff2") format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
+@import url("https://static.bluecdn.com/fonts/ubuntu/result.css");
+@import url("https://static.bluecdn.com/fonts/google-sans-code/result.css");
     :root {
       --bg: #ffffff;
       --text: #0a0f1a;
@@ -1539,6 +1509,48 @@ body.page-image-detail .format-row button.is-loading svg {
   animation: icon-spin 1s linear infinite;
 }
 
+body.page-image-detail .warn {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+  line-height: 1.9;
+}
+
+body.page-image-detail .refresh-wallpaper-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--blue);
+  background: var(--blue);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+body.page-image-detail .refresh-wallpaper-btn:hover {
+  background: #003faa;
+  border-color: #003faa;
+  transform: translateY(-1px);
+}
+
+body.page-image-detail .refresh-wallpaper-btn:focus-visible {
+  outline: 2px solid #8fb9ff;
+  outline-offset: 2px;
+}
+
+body.page-image-detail .refresh-wallpaper-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
 @keyframes icon-spin {
   from {
     transform: rotate(0deg);
@@ -1571,6 +1583,15 @@ body.page-image-detail .stats {
 
 body.page-image-detail .format-row {
     grid-template-columns: 1fr;
+  }
+
+body.page-image-detail .warn {
+    align-items: flex-start;
+  }
+
+body.page-image-detail .refresh-wallpaper-btn {
+    width: 100%;
+    margin-top: 4px;
   }
 }
 
