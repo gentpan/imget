@@ -245,12 +245,17 @@
       transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
     }
 
-    .language-link img {
+    .language-link > img {
       display: block;
-      width: 100%;
-      height: 100%;
+      width: 30px !important;
+      min-width: 30px;
+      max-width: 30px;
+      height: 20px !important;
+      min-height: 20px;
+      max-height: 20px;
       object-fit: cover;
       border-radius: 4px;
+      aspect-ratio: 3 / 2;
     }
 
     .language-link:hover,

@@ -84,7 +84,7 @@
           <label for="tester-type">{{ .Locale.TypeLabel }}</label>
           <select id="tester-type">
             <option value="">{{ .Locale.DefaultType }}</option>
-            {{ range .Site.Types }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+            {{ range .Site.Types }}<option value="{{ . }}">{{ typeLabelFor $.Locale.Code . }} ({{ . }})</option>{{ end }}
           </select>
         </div>
         <div class="tester-field">
@@ -196,9 +196,9 @@
       <p>{{ .Locale.TypesLead }}</p>
       <div class="type-grid">
         {{ range .Site.Types }}
-          <a class="type-card" href="{{ $.Site.BaseURL }}/{{ . }}" title="{{ . }}">
+          <a class="type-card" href="{{ $.Site.BaseURL }}/{{ . }}" title="{{ typeLabelFor $.Locale.Code . }} ({{ . }})">
             <span class="type-icon" aria-hidden="true"><i class="{{ typeIcon . }}"></i></span>
-            <div class="type-copy"><strong>{{ . }}</strong><p>{{ $.Locale.TypeLabel }}: {{ . }}</p></div>
+            <div class="type-copy"><strong>{{ typeLabelFor $.Locale.Code . }}</strong><p>{{ typeDescFor $.Locale.Code . }} · {{ . }}</p></div>
           </a>
         {{ end }}
       </div>
