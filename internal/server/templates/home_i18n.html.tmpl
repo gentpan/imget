@@ -14,7 +14,7 @@
   <meta property="og:locale" content="{{ .Locale.OGLocale }}">
   {{ range .Languages }}{{ if not .Current }}<meta property="og:locale:alternate" content="{{ localeOG .Code }}">
   {{ end }}{{ end }}
-  <meta property="og:site_name" content="{{ .Site.FullName }}">
+  <meta property="og:site_name" content="{{ .Locale.BrandName }}">
   <meta property="og:title" content="{{ .Locale.Title }}">
   <meta property="og:description" content="{{ .Locale.Description }}">
   <meta property="og:url" content="{{ .CanonicalURL }}">
@@ -33,7 +33,7 @@
     .hero-top{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:24px}.header-tools{justify-self:end;align-self:center;min-width:0}.language-switch{display:flex;align-items:center;gap:8px;max-width:min(100%,760px)}.language-switch-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.language-switch-links{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:7px;max-width:min(100%,520px);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.language-switch-links::-webkit-scrollbar{display:none}.language-link{display:inline-flex;align-items:center;justify-content:center;width:30px;height:20px;flex:0 0 auto;padding:0;border:0;background:transparent;color:inherit;text-decoration:none;box-shadow:none;transition:opacity .15s ease,transform .15s ease}.language-link>img{display:block;width:30px!important;min-width:30px;max-width:30px;height:20px!important;min-height:20px;max-height:20px;object-fit:cover;border-radius:4px;aspect-ratio:3/2}.language-link:hover,.language-link.is-active{opacity:1;box-shadow:none;transform:scale(1.08)}.hero-badges{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}@media(max-width:720px){.hero-top{grid-template-columns:1fr;align-items:flex-start;gap:12px}.header-tools{justify-self:stretch}.language-switch-links{justify-content:flex-start;max-width:100%}}
   </style>
   <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":{{ jsonStr .Site.FullName }},"alternateName":{{ jsonStr .Site.Name }},"url":{{ jsonStr .CanonicalURL }},"description":{{ jsonStr .Locale.Description }},"inLanguage":{{ jsonStr .Locale.HTMLLang }},"applicationCategory":"MultimediaApplication","operatingSystem":"Any","image":{{ jsonStr .Site.OGImage }},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"WebApplication","name":{{ jsonStr .Locale.BrandName }},"alternateName":{{ jsonStr .Site.Name }},"url":{{ jsonStr .CanonicalURL }},"description":{{ jsonStr .Locale.Description }},"inLanguage":{{ jsonStr .Locale.HTMLLang }},"applicationCategory":"MultimediaApplication","operatingSystem":"Any","image":{{ jsonStr .Site.OGImage }},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
   </script>
 </head>
 <body class="page-home" data-site-base-url="{{ .Site.BaseURL }}">
@@ -261,7 +261,7 @@
     <footer class="footer">
       <div class="footer-inner">
         <div class="footer-copy">
-          <p class="footer-copyright">© {{ .Site.CopyrightYear }} {{ .Site.FullName }}. All rights reserved.</p>
+          <p class="footer-copyright">© {{ .Site.CopyrightYear }} {{ .Locale.BrandName }}. All rights reserved.</p>
         </div>
         <div class="footer-stats" aria-label="{{ .Locale.FooterStatsAria }}">
           <span class="footer-stat"><strong>{{ formatNumber .TotalCount }}</strong><span>{{ .Locale.ImagesLabel }}</span></span>
@@ -281,7 +281,7 @@
       <div class="site-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="site-modal-title">
         <div class="site-modal-head">
           <div>
-            <p class="site-modal-eyebrow">{{ .Site.FullName }}</p>
+            <p class="site-modal-eyebrow">{{ .Locale.BrandName }}</p>
             <h2 id="site-modal-title">{{ .Locale.FooterInfo }}</h2>
           </div>
           <button class="site-modal-close" type="button" aria-label="{{ .Locale.CloseModalAria }}" data-modal-close>
@@ -296,7 +296,7 @@
         <div class="site-modal-body">
           {{ if eq .Locale.Code "zh" }}
           <section class="site-modal-panel is-active" data-panel="usage">
-            <p>{{ .Site.Name }} 是一个用于动态图片调用、尺寸生成、格式转换与内容占位的工具站，适合文章头图、卡片配图、开发测试、内容演示与非商业展示等场景。</p>
+            <p>{{ .Locale.BrandName }} 是一个用于动态图片调用、尺寸生成、格式转换与内容占位的工具站，适合文章头图、卡片配图、开发测试、内容演示与非商业展示等场景。</p>
             <ul class="site-modal-list">
               <li>支持通过尺寸、分类、固定参数、多图位与格式参数组合生成可直接访问的图片地址。</li>
               <li>适合用于开发联调、原型展示、博客配图、站点占位图与内容模块测试。</li>
@@ -311,7 +311,7 @@
             </ul>
           </section>
           <section class="site-modal-panel" data-panel="privacy">
-            <p>{{ .Site.Name }} 不以收集个人隐私数据为目的，站点仅保留维持服务运行所需的基础请求信息与统计信息，用于缓存优化、故障排查和访问分析。</p>
+            <p>{{ .Locale.BrandName }} 不以收集个人隐私数据为目的，站点仅保留维持服务运行所需的基础请求信息与统计信息，用于缓存优化、故障排查和访问分析。</p>
             <ul class="site-modal-list">
               <li>系统可能记录访问时间、请求路径、尺寸参数、分类参数、来源请求头等基础技术信息。</li>
               <li>本站不主动要求用户提交身份证、支付信息、银行卡等敏感个人信息。</li>
