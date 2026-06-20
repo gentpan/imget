@@ -71,6 +71,7 @@ func (s *Server) localizedHomeData(r *http.Request, code string) map[string]any 
 		"Languages":    languageLinks(locale.Code, s.site),
 		"CanonicalURL": canonicalURL,
 		"HomeURL":      canonicalURL,
+		"Copyright":    localizedCopyrightDetails(locale.Code, s.site),
 		"TotalCount":   summary.TotalImages,
 		"TotalBytes":   summary.TotalBytes,
 	}
