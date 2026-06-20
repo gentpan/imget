@@ -260,7 +260,7 @@
 
     .language-link:hover,
     .language-link.is-active {
-      opacity: .82;
+      opacity: 1;
       box-shadow: none;
       transform: scale(1.08);
     }
