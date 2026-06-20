@@ -262,7 +262,7 @@
     .language-link.is-active {
       opacity: .82;
       box-shadow: none;
-      transform: translateY(-1px);
+      transform: scale(1.08);
     }
 
     .hero-badges {
