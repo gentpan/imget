@@ -26,6 +26,8 @@ func loadTemplates(overrideDir string) (*templates, error) {
 		"jsonStr":      jsonStr,
 		"typeLabel":    TypeChineseLabel,
 		"typeDesc":     TypeChineseDescription,
+		"typeLabelFor": TypeLocalizedLabel,
+		"typeDescFor":  TypeLocalizedDescription,
 		"typeIcon":     TypeIconClass,
 		"defaultStr": func(s, def string) string {
 			if s == "" {
