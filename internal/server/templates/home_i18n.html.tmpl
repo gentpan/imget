@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="{{ .Locale.HTMLLang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Locale.Title }}</title>
+  <meta name="description" content="{{ .Locale.Description }}">
+  <meta name="keywords" content="{{ .Locale.Keywords }}">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="{{ .Site.BaseURL }}/{{ .Locale.Code }}/">
+  {{ range .Languages }}<link rel="alternate" hreflang="{{ .Code }}" href="{{ .URL }}">
+  {{ end }}<link rel="alternate" hreflang="x-default" href="{{ .Site.BaseURL }}/en/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="{{ .Locale.OGLocale }}">
+  <meta property="og:site_name" content="{{ .Site.FullName }}">
+  <meta property="og:title" content="{{ .Locale.Title }}">
+  <meta property="og:description" content="{{ .Locale.Description }}">
+  <meta property="og:url" content="{{ .Site.BaseURL }}/{{ .Locale.Code }}/">
+  <meta property="og:image" content="{{ .Site.OGImage }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ .Locale.Title }}">
+  <meta name="twitter:description" content="{{ .Locale.Description }}">
+  <meta name="twitter:image" content="{{ .Site.OGImage }}">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico">
+  {{ if .Site.HasFontAwesome }}<link rel="stylesheet" href="{{ .Site.FontAwesomeCSSURL }}">{{ end }}
+  {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
+  <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
+</head>
+<body class="page-home" data-site-base-url="{{ .Site.BaseURL }}">
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="hero-brand">
+          <a class="brand-wordmark" href="{{ .Site.BaseURL }}/{{ .Locale.Code }}/" aria-label="{{ .Site.Name }} {{ .Locale.HeaderAria }}">
+            <span class="sr-only">{{ .Site.Name }}</span>
+          </a>
+        </div>
+        <div class="header-tools">
+          <div class="language-switch" aria-label="{{ .Locale.LanguageSwitcherLabel }}">
+            <span class="language-switch-label">{{ .Locale.LanguageSwitcherLabel }}</span>
+            <div class="language-switch-links">
+              {{ range .Languages }}
+                <a class="language-link{{ if .Current }} is-active{{ end }}" href="{{ .URL }}" lang="{{ .Code }}">{{ .Native }}</a>
+              {{ end }}
+            </div>
+          </div>
+        </div>
+        <div class="hero-badges" aria-label="{{ .Locale.FeatureAria }}">
+          <span class="hero-badge size"><i class="fa-light fa-crop" aria-hidden="true"></i> {{ .Locale.FeatureSize }}</span>
+          <span class="hero-badge type"><i class="fa-light fa-grid-2" aria-hidden="true"></i> {{ .Locale.FeatureType }}</span>
+          <span class="hero-badge fixed"><i class="fa-light fa-thumbtack" aria-hidden="true"></i> {{ .Locale.FeatureFixed }}</span>
+          <span class="hero-badge format"><i class="fa-light fa-image" aria-hidden="true"></i> {{ .Locale.FeatureFormat }}</span>
+          <span class="hero-badge cdn"><i class="fa-light fa-globe" aria-hidden="true"></i> {{ .Locale.FeatureCDN }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>{{ .Locale.UsageTitle }}</h2>
+      <p>{{ .Locale.UsageLead }}</p>
+      <div class="summary-bar">
+        <span><strong>{{ .Locale.SummaryBase }}</strong><code>/width/height</code></span>
+        <span><strong>{{ .Locale.SummaryFixed }}</strong><code>r</code></span>
+        <span><strong>{{ .Locale.SummaryType }}</strong><code>type</code></span>
+        <span><strong>{{ .Locale.SummarySlot }}</strong><code>s</code></span>
+        <span><strong>{{ .Locale.SummaryFormat }}</strong><code>format</code></span>
+      </div>
+      <h3>{{ .Locale.GeneratorTitle }}</h3>
+      <p>{{ .Locale.GeneratorLead }}</p>
+      <div class="tester-grid">
+        <div class="tester-field">
+          <label for="tester-width">{{ .Locale.WidthLabel }}</label>
+          <input id="tester-width" type="number" min="1" step="1" value="1920">
+        </div>
+        <div class="tester-field">
+          <label for="tester-height">{{ .Locale.HeightLabel }}</label>
+          <input id="tester-height" type="number" min="1" step="1" value="1080">
+        </div>
+        <div class="tester-field">
+          <label for="tester-type">{{ .Locale.TypeLabel }}</label>
+          <select id="tester-type">
+            <option value="">{{ .Locale.DefaultType }}</option>
+            {{ range .Site.Types }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+          </select>
+        </div>
+        <div class="tester-field">
+          <label for="tester-format">{{ .Locale.FormatLabel }}</label>
+          <select id="tester-format">
+            <option value="">{{ .Locale.DefaultFormat }}</option>
+            {{ if .Site.SupportsAvif }}<option value="avif">avif</option>{{ end }}
+          </select>
+        </div>
+        <div class="tester-field">
+          <label for="tester-mode">{{ .Locale.ModeLabel }}</label>
+          <select id="tester-mode">
+            <option value="random">{{ .Locale.RandomMode }}</option>
+            <option value="fixed">{{ .Locale.FixedMode }}</option>
+          </select>
+        </div>
+        <div class="tester-field tester-r-field" id="tester-r-field" hidden>
+          <label for="tester-r">r</label>
+          <div class="tester-input-wrap">
+            <input id="tester-r" type="text" value="749630" inputmode="numeric">
+            <button class="tester-dice-btn" id="tester-randomize-r" type="button" aria-label="random r" title="random r">
+              <i class="fa-light fa-dice-five" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <div class="tester-field">
+          <label for="tester-slot">{{ .Locale.SlotLabel }}</label>
+          <input id="tester-slot" type="text" placeholder="1">
+        </div>
+        <div class="tester-field">
+          <label for="tester-keyword">{{ .Locale.KeywordLabel }}</label>
+          <input id="tester-keyword" type="text" maxlength="40">
+        </div>
+      </div>
+      <div class="tester-actions">
+        <div class="tester-url" id="tester-url">{{ .Site.BaseURL }}/1920/1080</div>
+        <div class="tester-buttons">
+          <button class="action-btn secondary" id="tester-copy" type="button">{{ .Locale.CopyAddress }}</button>
+          <a class="action-btn" id="tester-open" href="{{ .Site.BaseURL }}/1920/1080" target="_blank" rel="noopener noreferrer">{{ .Locale.OpenTest }}</a>
+        </div>
+      </div>
+
+      <h3>{{ .Locale.ExamplesTitle }}</h3>
+      <div class="code-card">
+        <div class="code-head">
+          <span>{{ .Locale.HTMLExampleTitle }}</span>
+          <button class="copy-btn" data-copy-target="ref-html" type="button" aria-label="{{ .Locale.CopyAddress }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg>
+          </button>
+        </div>
+        <pre id="ref-html"><code>&lt;img src="{{ .Site.BaseURL }}/1920/1080" alt="random image"&gt;
+&lt;img src="{{ .Site.BaseURL }}/1920/1080?type=landscape" alt="landscape image"&gt;
+&lt;img src="{{ .Site.BaseURL }}/1920/1080?r=749630" alt="fixed image"&gt;</code></pre>
+      </div>
+      <div class="code-card">
+        <div class="code-head">
+          <span>{{ .Locale.MarkdownExampleTitle }}</span>
+          <button class="copy-btn" data-copy-target="ref-md" type="button" aria-label="{{ .Locale.CopyAddress }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg>
+          </button>
+        </div>
+        <pre id="ref-md"><code>![random image]({{ .Site.BaseURL }}/1920/1080)
+![landscape image]({{ .Site.BaseURL }}/800/400?type=landscape)</code></pre>
+      </div>
+      <div class="code-card">
+        <div class="code-head">
+          <span>{{ .Locale.CSSExampleTitle }}</span>
+          <button class="copy-btn" data-copy-target="ref-css" type="button" aria-label="{{ .Locale.CopyAddress }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg>
+          </button>
+        </div>
+        <pre id="ref-css"><code>.hero-banner {
+  background-image: url("{{ .Site.BaseURL }}/1920/1080?type=landscape");
+  background-size: cover;
+  background-position: center;
+}</code></pre>
+      </div>
+
+      <h3>{{ .Locale.WallpaperTitle }}</h3>
+      <p>{{ .Locale.WallpaperLead }}</p>
+      <div class="code-card">
+        <div class="code-head">
+          <span>{{ .Locale.WallpaperTitle }}</span>
+          <button class="copy-btn" data-copy-target="wallpaper-url" type="button" aria-label="{{ .Locale.CopyAddress }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg>
+          </button>
+        </div>
+        <pre id="wallpaper-url"><code>{{ .Site.BaseURL }}/landscape
+{{ .Site.BaseURL }}/animal
+{{ .Site.BaseURL }}/space
+{{ .Site.BaseURL }}/type/landscape
+{{ .Site.BaseURL }}/landscape?r=749630</code></pre>
+      </div>
+
+      <h3>{{ .Locale.FormatSectionTitle }}</h3>
+      <p>{{ .Locale.FormatLead }}</p>
+      <div class="code-card">
+        <div class="code-head">
+          <span>{{ .Locale.FormatSectionTitle }}</span>
+          <button class="copy-btn" data-copy-target="mode-format" type="button" aria-label="{{ .Locale.CopyAddress }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg>
+          </button>
+        </div>
+        <pre id="mode-format"><code>{{ .Site.BaseURL }}/1920/1080?type=landscape&format=webp{{ if .Site.SupportsAvif }}
+{{ .Site.BaseURL }}/1920/1080?type=landscape&format=avif{{ end }}</code></pre>
+      </div>
+
+      <h3>{{ .Locale.TypesTitle }}</h3>
+      <p>{{ .Locale.TypesLead }}</p>
+      <div class="type-grid">
+        {{ range .Site.Types }}
+          <a class="type-card" href="{{ $.Site.BaseURL }}/{{ . }}" title="{{ . }}">
+            <span class="type-icon" aria-hidden="true"><i class="{{ typeIcon . }}"></i></span>
+            <div class="type-copy"><strong>{{ . }}</strong><p>{{ $.Locale.TypeLabel }}: {{ . }}</p></div>
+          </a>
+        {{ end }}
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>{{ .Locale.SamplesTitle }}</h2>
+      <div class="sample-grid">
+        <article class="sample-card is-loading">
+          <div class="sample-media"><img src="{{ .Site.BaseURL }}/1920/1080" alt="{{ .Locale.RandomSample }}" loading="lazy" decoding="async"></div>
+          <div class="sample-body"><h3>{{ .Locale.RandomSample }}</h3><div class="code-card"><div class="code-head"><span>{{ .Locale.SampleLink }}</span><button class="copy-btn" data-copy-target="sample-1" type="button" aria-label="{{ .Locale.CopyAddress }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg></button></div><pre id="sample-1"><code>{{ .Site.BaseURL }}/1920/1080</code></pre></div></div>
+        </article>
+        <article class="sample-card is-loading">
+          <div class="sample-media"><img src="{{ .Site.BaseURL }}/1920/1080?type=landscape" alt="{{ .Locale.TypedSample }}" loading="lazy" decoding="async"></div>
+          <div class="sample-body"><h3>{{ .Locale.TypedSample }}</h3><div class="code-card"><div class="code-head"><span>{{ .Locale.SampleLink }}</span><button class="copy-btn" data-copy-target="sample-2" type="button" aria-label="{{ .Locale.CopyAddress }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg></button></div><pre id="sample-2"><code>{{ .Site.BaseURL }}/1920/1080?type=landscape</code></pre></div></div>
+        </article>
+        <article class="sample-card is-loading">
+          <div class="sample-media"><img src="{{ .Site.BaseURL }}/1920/1080?r=749630" alt="{{ .Locale.FixedSample }}" loading="lazy" decoding="async"></div>
+          <div class="sample-body"><h3>{{ .Locale.FixedSample }}</h3><div class="code-card"><div class="code-head"><span>{{ .Locale.SampleLink }}</span><button class="copy-btn" data-copy-target="sample-3" type="button" aria-label="{{ .Locale.CopyAddress }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg></button></div><pre id="sample-3"><code>{{ .Site.BaseURL }}/1920/1080?r=749630</code></pre></div></div>
+        </article>
+        {{ if .Site.SupportsAvif }}
+        <article class="sample-card is-loading">
+          <div class="sample-media"><img src="{{ .Site.BaseURL }}/1920/1080?type=landscape&format=avif" alt="{{ .Locale.AVIFSample }}" loading="lazy" decoding="async"></div>
+          <div class="sample-body"><h3>{{ .Locale.AVIFSample }}</h3><div class="code-card"><div class="code-head"><span>{{ .Locale.SampleLink }}</span><button class="copy-btn" data-copy-target="sample-5" type="button" aria-label="{{ .Locale.CopyAddress }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg></button></div><pre id="sample-5"><code>{{ .Site.BaseURL }}/1920/1080?type=landscape&format=avif</code></pre></div></div>
+        </article>
+        {{ end }}
+        <article class="sample-card is-loading">
+          <div class="sample-media"><img src="{{ .Site.BaseURL }}/1920/1080?type=landscape&format=webp" alt="{{ .Locale.WebPSample }}" loading="lazy" decoding="async"></div>
+          <div class="sample-body"><h3>{{ .Locale.WebPSample }}</h3><div class="code-card"><div class="code-head"><span>{{ .Locale.SampleLink }}</span><button class="copy-btn" data-copy-target="sample-6" type="button" aria-label="{{ .Locale.CopyAddress }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="10" height="10"></rect><path d="M5 15V5h10"></path></svg></button></div><pre id="sample-6"><code>{{ .Site.BaseURL }}/1920/1080?type=landscape&format=webp</code></pre></div></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>{{ .Locale.CopyrightTitle }}</h2>
+      <p>{{ .Locale.CopyrightCopy }}</p>
+      <h3>{{ .Locale.PrivacyTitle }}</h3>
+      <p>{{ .Locale.PrivacyCopy }}</p>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-copy">
+          <p class="footer-copyright">© {{ .Site.CopyrightYear }} {{ .Site.FullName }}. All rights reserved.</p>
+        </div>
+        <div class="footer-stats" aria-label="{{ .Locale.FooterStatsAria }}">
+          <span class="footer-stat"><strong>{{ formatNumber .TotalCount }}</strong><span>{{ .Locale.ImagesLabel }}</span></span>
+          <span class="footer-stat"><strong>{{ formatBytes .TotalBytes }}</strong><span>{{ .Locale.StorageLabel }}</span></span>
+        </div>
+        <div class="footer-links">
+          <span class="footer-label">{{ .Locale.FooterInfo }}</span>
+          <button class="footer-link-button" type="button" data-modal-tab="usage">{{ .Locale.UsageModalTitle }}</button>
+          <button class="footer-link-button" type="button" data-modal-tab="copyright">{{ .Locale.CopyrightModalTitle }}</button>
+          <button class="footer-link-button" type="button" data-modal-tab="privacy">{{ .Locale.PrivacyModalTitle }}</button>
+        </div>
+      </div>
+    </footer>
+
+    <div class="site-modal" id="site-info-modal" hidden>
+      <div class="site-modal-backdrop" data-modal-close></div>
+      <div class="site-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="site-modal-title">
+        <div class="site-modal-head">
+          <div>
+            <p class="site-modal-eyebrow">{{ .Site.FullName }}</p>
+            <h2 id="site-modal-title">{{ .Locale.FooterInfo }}</h2>
+          </div>
+          <button class="site-modal-close" type="button" aria-label="{{ .Locale.CloseModalAria }}" data-modal-close>
+            <i class="fa-light fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="site-modal-tabs" role="tablist" aria-label="{{ .Locale.FooterInfo }}">
+          <button class="site-modal-tab is-active" type="button" role="tab" aria-selected="true" data-tab="usage">{{ .Locale.UsageModalTitle }}</button>
+          <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="copyright">{{ .Locale.CopyrightModalTitle }}</button>
+          <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="privacy">{{ .Locale.PrivacyModalTitle }}</button>
+        </div>
+        <div class="site-modal-body">
+          <section class="site-modal-panel is-active" data-panel="usage"><p>{{ .Locale.UsageLead }}</p></section>
+          <section class="site-modal-panel" data-panel="copyright"><p>{{ .Locale.CopyrightCopy }}</p></section>
+          <section class="site-modal-panel" data-panel="privacy"><p>{{ .Locale.PrivacyCopy }}</p></section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+document.querySelectorAll(".sample-card.is-loading img").forEach(function(img){var clr=function(){img.closest(".sample-card").classList.remove("is-loading")};if(img.complete&&img.naturalWidth>0)clr();else{img.addEventListener("load",clr);img.addEventListener("error",clr)}});
+</script>
+  <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
+</body>
+</html>

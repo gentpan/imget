@@ -184,6 +184,64 @@
     .hero-badge.format { --badge-color: #ea580c; }
     .hero-badge.cdn { --badge-color: #7c3aed; }
 
+    .hero-top {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .header-tools {
+      justify-self: end;
+      align-self: center;
+      min-width: 0;
+    }
+
+    .language-switch {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: min(100%, 760px);
+      font-family: "Ubuntu", "Google Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .language-switch-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      flex: 0 0 auto;
+    }
+
+    .language-switch-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .language-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--blue-deep);
+      text-decoration: none;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .language-link:hover,
+    .language-link.is-active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: var(--white);
+    }
+
+    .hero-badges {
+      grid-column: 1 / -1;
+    }
+
     .section {
       border: 1px solid var(--line);
       background: var(--white);

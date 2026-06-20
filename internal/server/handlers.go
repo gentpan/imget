@@ -50,8 +50,12 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.deps.Logger.Warn("library summary failed", "err", err)
 	}
+	locale, _ := localizedHomeFor("zh")
+	locale = localizeText(locale, s.site)
 	data := map[string]any{
 		"Site":       s.site,
+		"Locale":     locale,
+		"Languages":  languageLinks("zh", s.site),
 		"TotalCount": summary.TotalImages,
 		"TotalBytes": summary.TotalBytes,
 	}
@@ -59,6 +63,36 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	if err := s.templates.render(w, "home.html.tmpl", data); err != nil {
 		s.deps.Logger.Error("home render", "err", err)
+	}
+}
+
+func (s *Server) handleLocalizedHome(w http.ResponseWriter, r *http.Request, code string) {
+	locale, ok := localizedHomeFor(code)
+	if !ok || code == "zh" {
+		http.Redirect(w, r, s.deps.Cfg.SiteBaseURL+"/", http.StatusMovedPermanently)
+		return
+	}
+	if r.URL.Path != "/"+locale.Code+"/" {
+		http.Redirect(w, r, s.deps.Cfg.SiteBaseURL+"/"+locale.Code+"/", http.StatusMovedPermanently)
+		return
+	}
+
+	summary, err := s.deps.DB.LibrarySummary(r.Context())
+	if err != nil {
+		s.deps.Logger.Warn("library summary failed", "err", err)
+	}
+	locale = localizeText(locale, s.site)
+	data := map[string]any{
+		"Site":       s.site,
+		"Locale":     locale,
+		"Languages":  languageLinks(locale.Code, s.site),
+		"TotalCount": summary.TotalImages,
+		"TotalBytes": summary.TotalBytes,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	if err := s.templates.render(w, "home_i18n.html.tmpl", data); err != nil {
+		s.deps.Logger.Error("localized home render", "code", code, "err", err)
 	}
 }
 
