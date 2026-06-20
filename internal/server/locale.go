@@ -3,12 +3,13 @@ package server
 import "strings"
 
 type LanguageLink struct {
-	Code    string
-	Label   string
-	Native  string
-	Flag    string
-	URL     string
-	Current bool
+	Code     string
+	HrefLang string
+	Label    string
+	Native   string
+	Flag     string
+	URL      string
+	Current  bool
 }
 
 type LocalizedHome struct {
@@ -241,12 +242,13 @@ func languageLinks(current string, site SiteContext) []LanguageLink {
 			u = site.BaseURL + "/"
 		}
 		links = append(links, LanguageLink{
-			Code:    l.Code,
-			Label:   strings.ToUpper(l.Code),
-			Native:  l.Name,
-			Flag:    languageFlagCode(l.Code),
-			URL:     u,
-			Current: l.Code == current,
+			Code:     l.Code,
+			HrefLang: l.HTMLLang,
+			Label:    strings.ToUpper(l.Code),
+			Native:   l.Name,
+			Flag:     languageFlagCode(l.Code),
+			URL:      u,
+			Current:  l.Code == current,
 		})
 	}
 	return links
@@ -279,4 +281,11 @@ func localizeText(s LocalizedHome, site SiteContext) LocalizedHome {
 	s.Keywords = repl(s.Keywords)
 	s.UsageLead = repl(s.UsageLead)
 	return s
+}
+
+func localeOG(code string) string {
+	if l, ok := localizedHomeFor(code); ok {
+		return l.OGLocale
+	}
+	return "en_US"
 }

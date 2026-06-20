@@ -46,23 +46,33 @@ func sanitizeKeyword(s string) string {
 // ============================================================
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
+	data := s.localizedHomeData(r, "zh")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	if err := s.templates.render(w, "home_i18n.html.tmpl", data); err != nil {
+		s.deps.Logger.Error("home render", "err", err)
+	}
+}
+
+func (s *Server) localizedHomeData(r *http.Request, code string) map[string]any {
 	summary, err := s.deps.DB.LibrarySummary(r.Context())
 	if err != nil {
 		s.deps.Logger.Warn("library summary failed", "err", err)
 	}
-	locale, _ := localizedHomeFor("zh")
+	locale, _ := localizedHomeFor(code)
 	locale = localizeText(locale, s.site)
-	data := map[string]any{
-		"Site":       s.site,
-		"Locale":     locale,
-		"Languages":  languageLinks("zh", s.site),
-		"TotalCount": summary.TotalImages,
-		"TotalBytes": summary.TotalBytes,
+	canonicalURL := s.site.BaseURL + "/" + locale.Code + "/"
+	if locale.Code == "zh" {
+		canonicalURL = s.site.BaseURL + "/"
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "public, max-age=300")
-	if err := s.templates.render(w, "home.html.tmpl", data); err != nil {
-		s.deps.Logger.Error("home render", "err", err)
+	return map[string]any{
+		"Site":         s.site,
+		"Locale":       locale,
+		"Languages":    languageLinks(locale.Code, s.site),
+		"CanonicalURL": canonicalURL,
+		"HomeURL":      canonicalURL,
+		"TotalCount":   summary.TotalImages,
+		"TotalBytes":   summary.TotalBytes,
 	}
 }
 
@@ -77,18 +87,7 @@ func (s *Server) handleLocalizedHome(w http.ResponseWriter, r *http.Request, cod
 		return
 	}
 
-	summary, err := s.deps.DB.LibrarySummary(r.Context())
-	if err != nil {
-		s.deps.Logger.Warn("library summary failed", "err", err)
-	}
-	locale = localizeText(locale, s.site)
-	data := map[string]any{
-		"Site":       s.site,
-		"Locale":     locale,
-		"Languages":  languageLinks(locale.Code, s.site),
-		"TotalCount": summary.TotalImages,
-		"TotalBytes": summary.TotalBytes,
-	}
+	data := s.localizedHomeData(r, locale.Code)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	if err := s.templates.render(w, "home_i18n.html.tmpl", data); err != nil {

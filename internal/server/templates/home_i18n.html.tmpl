@@ -7,32 +7,41 @@
   <meta name="description" content="{{ .Locale.Description }}">
   <meta name="keywords" content="{{ .Locale.Keywords }}">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="{{ .Site.BaseURL }}/{{ .Locale.Code }}/">
-  {{ range .Languages }}<link rel="alternate" hreflang="{{ .Code }}" href="{{ .URL }}">
+  <link rel="canonical" href="{{ .CanonicalURL }}">
+  {{ range .Languages }}<link rel="alternate" hreflang="{{ .HrefLang }}" href="{{ .URL }}">
   {{ end }}<link rel="alternate" hreflang="x-default" href="{{ .Site.BaseURL }}/en/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="{{ .Locale.OGLocale }}">
+  {{ range .Languages }}{{ if not .Current }}<meta property="og:locale:alternate" content="{{ localeOG .Code }}">
+  {{ end }}{{ end }}
   <meta property="og:site_name" content="{{ .Site.FullName }}">
   <meta property="og:title" content="{{ .Locale.Title }}">
   <meta property="og:description" content="{{ .Locale.Description }}">
-  <meta property="og:url" content="{{ .Site.BaseURL }}/{{ .Locale.Code }}/">
+  <meta property="og:url" content="{{ .CanonicalURL }}">
   <meta property="og:image" content="{{ .Site.OGImage }}">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="{{ .Locale.Title }}">
   <meta name="twitter:description" content="{{ .Locale.Description }}">
   <meta name="twitter:image" content="{{ .Site.OGImage }}">
+  <meta name="twitter:url" content="{{ .CanonicalURL }}">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="shortcut icon" href="/favicon.ico">
   {{ if .Site.HasFontAwesome }}<link rel="stylesheet" href="{{ .Site.FontAwesomeCSSURL }}">{{ end }}
   {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
   <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
+  <style>
+    .hero-top{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:24px}.header-tools{justify-self:end;align-self:center;min-width:0}.language-switch{display:flex;align-items:center;gap:8px;max-width:min(100%,760px)}.language-switch-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.language-switch-links{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:7px;max-width:min(100%,520px);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.language-switch-links::-webkit-scrollbar{display:none}.language-link{display:inline-flex;align-items:center;justify-content:center;width:30px;height:20px;flex:0 0 auto;padding:0;border:0;background:transparent;color:inherit;text-decoration:none;box-shadow:none;transition:opacity .15s ease,transform .15s ease}.language-link>img{display:block;width:30px!important;min-width:30px;max-width:30px;height:20px!important;min-height:20px;max-height:20px;object-fit:cover;border-radius:4px;aspect-ratio:3/2}.language-link:hover,.language-link.is-active{opacity:.82;box-shadow:none;transform:translateY(-1px)}.hero-badges{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}@media(max-width:720px){.hero-top{grid-template-columns:1fr;align-items:flex-start;gap:12px}.header-tools{justify-self:stretch}.language-switch-links{justify-content:flex-start;max-width:100%}}
+  </style>
+  <script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":{{ jsonStr .Site.FullName }},"alternateName":{{ jsonStr .Site.Name }},"url":{{ jsonStr .CanonicalURL }},"description":{{ jsonStr .Locale.Description }},"inLanguage":{{ jsonStr .Locale.HTMLLang }},"applicationCategory":"MultimediaApplication","operatingSystem":"Any","image":{{ jsonStr .Site.OGImage }},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
 </head>
 <body class="page-home" data-site-base-url="{{ .Site.BaseURL }}">
   <main class="wrap">
     <section class="hero">
       <div class="hero-top">
         <div class="hero-brand">
-          <a class="brand-wordmark" href="{{ .Site.BaseURL }}/{{ .Locale.Code }}/" aria-label="{{ .Site.Name }} {{ .Locale.HeaderAria }}">
+          <a class="brand-wordmark" href="{{ .HomeURL }}" aria-label="{{ .Site.Name }} {{ .Locale.HeaderAria }}">
             <span class="sr-only">{{ .Site.Name }}</span>
           </a>
         </div>

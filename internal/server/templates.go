@@ -29,6 +29,7 @@ func loadTemplates(overrideDir string) (*templates, error) {
 		"typeLabelFor": TypeLocalizedLabel,
 		"typeDescFor":  TypeLocalizedDescription,
 		"typeIcon":     TypeIconClass,
+		"localeOG":     localeOG,
 		"defaultStr": func(s, def string) string {
 			if s == "" {
 				return def
