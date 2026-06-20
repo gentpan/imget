@@ -235,9 +235,13 @@ func localizedCopyrightDetails(code string, site SiteContext) CopyrightDetails {
 	if !ok {
 		text = copyrightTexts["en"]
 	}
+	brandName := site.Name
+	if code == "zh" {
+		brandName = "图得"
+	}
 	repl := func(v string) string {
-		v = strings.ReplaceAll(v, "{{site}}", site.FullName())
-		v = strings.ReplaceAll(v, "{{name}}", site.Name)
+		v = strings.ReplaceAll(v, "{{site}}", brandName)
+		v = strings.ReplaceAll(v, "{{name}}", brandName)
 		v = strings.ReplaceAll(v, "{{year}}", strconv.Itoa(site.CopyrightYear))
 		v = strings.ReplaceAll(v, "{{email}}", site.DMCAEmail)
 		return v

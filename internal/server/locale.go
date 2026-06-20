@@ -17,6 +17,7 @@ type LocalizedHome struct {
 	HTMLLang              string
 	OGLocale              string
 	Name                  string
+	BrandName             string
 	Title                 string
 	Description           string
 	Keywords              string
@@ -270,9 +271,15 @@ func languageFlagCode(code string) string {
 }
 
 func localizeText(s LocalizedHome, site SiteContext) LocalizedHome {
+	brandName := site.Name
+	if s.Code == "zh" {
+		brandName = "图得"
+	}
+	s.BrandName = brandName
+
 	repl := func(v string) string {
-		v = strings.ReplaceAll(v, "{{site}}", site.FullName())
-		v = strings.ReplaceAll(v, "{{name}}", site.Name)
+		v = strings.ReplaceAll(v, "{{site}}", brandName)
+		v = strings.ReplaceAll(v, "{{name}}", brandName)
 		v = strings.ReplaceAll(v, "{{host}}", site.BaseHost())
 		return v
 	}
