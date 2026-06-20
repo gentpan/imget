@@ -42,7 +42,10 @@
             <span class="language-switch-label">{{ .Locale.LanguageSwitcherLabel }}</span>
             <div class="language-switch-links">
               {{ range .Languages }}
-                <a class="language-link{{ if .Current }} is-active{{ end }}" href="{{ .URL }}" lang="{{ .Code }}">{{ .Native }}</a>
+                <a class="language-link{{ if .Current }} is-active{{ end }}" href="{{ .URL }}" lang="{{ .Code }}" title="{{ .Native }}" aria-label="{{ .Native }}">
+                  <img src="https://flagcdn.io/{{ .Flag }}.svg" alt="" loading="lazy" decoding="async">
+                  <span class="sr-only">{{ .Native }}</span>
+                </a>
               {{ end }}
             </div>
           </div>

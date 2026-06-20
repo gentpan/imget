@@ -6,6 +6,7 @@ type LanguageLink struct {
 	Code    string
 	Label   string
 	Native  string
+	Flag    string
 	URL     string
 	Current bool
 }
@@ -243,11 +244,27 @@ func languageLinks(current string, site SiteContext) []LanguageLink {
 			Code:    l.Code,
 			Label:   strings.ToUpper(l.Code),
 			Native:  l.Name,
+			Flag:    languageFlagCode(l.Code),
 			URL:     u,
 			Current: l.Code == current,
 		})
 	}
 	return links
+}
+
+func languageFlagCode(code string) string {
+	switch code {
+	case "zh":
+		return "cn"
+	case "en":
+		return "us"
+	case "ja":
+		return "jp"
+	case "ko":
+		return "kr"
+	default:
+		return code
+	}
 }
 
 func localizeText(s LocalizedHome, site SiteContext) LocalizedHome {
