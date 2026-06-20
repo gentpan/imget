@@ -247,7 +247,20 @@
 
     <section class="section">
       <h2>{{ .Locale.CopyrightTitle }}</h2>
+      {{ if eq .Locale.Code "zh" }}
+      <p><strong>页面文案版权：</strong>本页面中的文字说明、界面设计与站点说明内容，版权归 <strong>{{ .Site.FullName }}</strong> 所有，年份为 {{ .Site.CopyrightYear }}。</p>
+      <p><strong>图片版权：</strong>本服务提供图片调用、尺寸生成与格式转换能力。通过 {{ .Site.Name }} 访问到的图片，并不归本站所有；图片权利通常归原作者、原始上传者、来源平台或合法权利人所有。</p>
+      <table>
+        <tr><th>使用场景</th><th>建议</th></tr>
+        <tr><td>普通文章配图、站点横幅</td><td>建议保留图片来源记录，并确认来源平台允许该类展示用途。</td></tr>
+        <tr><td>商业页面、客户项目、广告页面</td><td>请单独核对商业授权、人物肖像、品牌标识与广告投放限制。</td></tr>
+        <tr><td>人物、动漫、插画类图片</td><td>请重点确认人物权利、作品授权、二次创作规则及商业适用范围。</td></tr>
+        <tr><td>原图下载与再次分发</td><td>请先核对来源平台条款；除非来源明确允许，否则不应视为可自由再分发素材。</td></tr>
+      </table>
+      <div class="warn">使用本服务即表示你理解并同意：图片相关权利不因经过本服务处理而发生转移；若使用行为涉及版权、肖像、商标、隐私、平台规范或当地法律问题，应以原始来源条款和适用法律为准。{{ if .Site.HasDMCAEmail }}版权处理请发送邮件至 <a class="email-link" href="mailto:{{ .Site.DMCAEmail }}"><i class="fa-light fa-envelope" aria-hidden="true"></i><span>{{ .Site.DMCAEmail }}</span></a>，并附上页面地址、相关说明与权利证明。{{ end }}</div>
+      {{ else }}
       <p>{{ .Locale.CopyrightCopy }}</p>
+      {{ end }}
       <h3>{{ .Locale.PrivacyTitle }}</h3>
       <p>{{ .Locale.PrivacyCopy }}</p>
     </section>
@@ -288,9 +301,39 @@
           <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="privacy">{{ .Locale.PrivacyModalTitle }}</button>
         </div>
         <div class="site-modal-body">
+          {{ if eq .Locale.Code "zh" }}
+          <section class="site-modal-panel is-active" data-panel="usage">
+            <p>{{ .Site.Name }} 是一个用于动态图片调用、尺寸生成、格式转换与内容占位的工具站，适合文章头图、卡片配图、开发测试、内容演示与非商业展示等场景。</p>
+            <ul class="site-modal-list">
+              <li>支持通过尺寸、分类、固定参数、多图位与格式参数组合生成可直接访问的图片地址。</li>
+              <li>适合用于开发联调、原型展示、博客配图、站点占位图与内容模块测试。</li>
+              <li>当前站点主要面向学习研究、开发测试、内容占位与非商业用途场景。</li>
+              <li>如用于商业页面、广告投放、客户项目、再分发或素材库用途，请先自行确认授权范围与平台条款。</li>
+            </ul>
+          </section>
+          <section class="site-modal-panel" data-panel="copyright">
+            <p>通过 {{ .Site.Name }} 访问到的图片，并不归本站所有。本站提供的是图片调用、尺寸处理、格式转换与访问分发能力，不出售图片版权，也不提供版权转让。</p>
+            <ul class="site-modal-list">
+              <li>图片的著作权、肖像权、商标权及其他相关权利，通常归原作者、原始上传者、来源平台或其合法权利人所有。</li>
+              <li>用户在下载、展示、转载、商用或再次分发图片前，应自行确认图片来源、授权范围与适用条件。</li>
+              <li>本站当前不以商业图库或版权素材销售为定位，主要用于工具服务与非商业内容辅助场景。</li>
+              <li>如权利人认为相关内容存在侵权、误用或不当展示情况，可通过页脚邮箱提交说明与权利证明，我们会尽快处理。</li>
+            </ul>
+          </section>
+          <section class="site-modal-panel" data-panel="privacy">
+            <p>{{ .Site.Name }} 不以收集个人隐私数据为目的，站点仅保留维持服务运行所需的基础请求信息与统计信息，用于缓存优化、故障排查和访问分析。</p>
+            <ul class="site-modal-list">
+              <li>系统可能记录访问时间、请求路径、尺寸参数、分类参数、来源请求头等基础技术信息。</li>
+              <li>本站不主动要求用户提交身份证、支付信息、银行卡等敏感个人信息。</li>
+              <li>如页面启用了统计脚本，其用途仅限于访问统计、服务稳定性分析与功能优化。</li>
+              <li>若你不希望特定链接长期被访问或索引，建议避免公开传播对应地址，并按实际需要联系处理。</li>
+            </ul>
+          </section>
+          {{ else }}
           <section class="site-modal-panel is-active" data-panel="usage"><p>{{ .Locale.UsageLead }}</p></section>
           <section class="site-modal-panel" data-panel="copyright"><p>{{ .Locale.CopyrightCopy }}</p></section>
           <section class="site-modal-panel" data-panel="privacy"><p>{{ .Locale.PrivacyCopy }}</p></section>
+          {{ end }}
         </div>
       </div>
     </div>
