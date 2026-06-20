@@ -8,7 +8,7 @@
   <meta name="keywords" content="{{ .Site.Name }},随机图片,占位图,动态图片,图片裁剪,WebP{{ if .Site.SupportsAvif }},AVIF{{ end }},文章头图,卡片配图">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="{{ .Site.BaseURL }}/">
-  {{ range .Languages }}<link rel="alternate" hreflang="{{ .Code }}" href="{{ .URL }}">
+  {{ range .Languages }}<link rel="alternate" hreflang="{{ .HrefLang }}" href="{{ .URL }}">
   {{ end }}<link rel="alternate" hreflang="x-default" href="{{ .Site.BaseURL }}/en/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="zh_CN">
