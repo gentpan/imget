@@ -8,6 +8,8 @@
   <meta name="keywords" content="{{ .Site.Name }},随机图片,占位图,动态图片,图片裁剪,WebP{{ if .Site.SupportsAvif }},AVIF{{ end }},文章头图,卡片配图">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="{{ .Site.BaseURL }}/">
+  {{ range .Languages }}<link rel="alternate" hreflang="{{ .Code }}" href="{{ .URL }}">
+  {{ end }}<link rel="alternate" hreflang="x-default" href="{{ .Site.BaseURL }}/en/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="zh_CN">
   <meta property="og:site_name" content="{{ .Site.FullName }}">
@@ -34,6 +36,16 @@
           <a class="brand-wordmark" href="/" aria-label="{{ .Site.Name }} 首页">
             <span class="sr-only">{{ .Site.Name }}</span>
           </a>
+        </div>
+        <div class="header-tools">
+          <div class="language-switch" aria-label="{{ .Locale.LanguageSwitcherLabel }}">
+            <span class="language-switch-label">{{ .Locale.LanguageSwitcherLabel }}</span>
+            <div class="language-switch-links">
+              {{ range .Languages }}
+                <a class="language-link{{ if .Current }} is-active{{ end }}" href="{{ .URL }}" lang="{{ .Code }}">{{ .Native }}</a>
+              {{ end }}
+            </div>
+          </div>
         </div>
         <div class="hero-badges" aria-label="核心功能">
           <span class="hero-badge size"><i class="fa-light fa-crop" aria-hidden="true"></i> 支持尺寸裁剪</span>

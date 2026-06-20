@@ -84,6 +84,13 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) {
 
 	switch len(parts) {
 	case 1:
+		// /{lang} — localized home page. Keep this before the type shortcut
+		// so language codes remain reserved and do not conflict with image
+		// categories.
+		if isLocalizedHomeCode(parts[0]) {
+			s.handleLocalizedHome(w, r, parts[0])
+			return
+		}
 		// /{type} — wallpaper shortcut: 1 segment matching an allowed type
 		// returns one original-resolution image (302 to CDN if configured).
 		if source.IsAllowedType(parts[0]) {
