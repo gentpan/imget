@@ -403,8 +403,14 @@ func (s *Server) fileTransformRequest(r *http.Request, abs string) (int, int, st
 }
 
 func (s *Server) handleFileTransform(w http.ResponseWriter, r *http.Request, typ, sourceRel string, width, height int, format string) {
-	if width < s.deps.Cfg.MinDim || height < s.deps.Cfg.MinDim ||
-		width > s.deps.Cfg.MaxDim || height > s.deps.Cfg.MaxDim {
+	// A transform's source original can legitimately be larger than the render
+	// ceiling (e.g. a 10000×7499 photo). When the format-proxy converts it to
+	// WebP/AVIF at native size, clamp to fit within MaxDim rather than 400 —
+	// the full-resolution original is still available via the raw /files link.
+	if width > s.deps.Cfg.MaxDim || height > s.deps.Cfg.MaxDim {
+		width, height = fitWithin(width, height, s.deps.Cfg.MaxDim)
+	}
+	if width < s.deps.Cfg.MinDim || height < s.deps.Cfg.MinDim {
 		s.renderError(w, r, http.StatusBadRequest, "尺寸超出允许范围",
 			"宽高需在 "+strconv.Itoa(s.deps.Cfg.MinDim)+" ~ "+strconv.Itoa(s.deps.Cfg.MaxDim)+" 之间")
 		return

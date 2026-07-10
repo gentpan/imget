@@ -12,7 +12,7 @@ import (
 // assetVersion is the single source of truth for the static-asset cache-buster
 // (?v=...). Bump it whenever main.min.css/js change; templates read it via
 // {{ .Site.AssetVersion }} instead of hardcoding the value per <link>/<script>.
-const assetVersion = "2026062011"
+const assetVersion = "2026071101"
 
 // SiteContext is the slice of config that every page template needs.
 // It is built once at server startup and reused for every render.

@@ -239,9 +239,13 @@ class Proxy(BaseHTTPRequestHandler):
                     content = content + MOBILE_CSS.encode('utf-8')
                 else:
                     html = content.decode('utf-8', errors='replace')
+                    # Keep imget's own asset version and just append the mobile
+                    # suffix, so a version bump upstream (site.go assetVersion)
+                    # auto-busts the mobile CSS cache too. A static version here
+                    # would pin browsers to a stale patched stylesheet forever.
                     html = re.sub(
-                        r'/assets/main\.min\.css\?v=[0-9A-Za-z_.-]+',
-                        f'/assets/main.min.css?v={MOBILE_CSS_VERSION}',
+                        r'/assets/main\.min\.css\?v=([0-9A-Za-z_.]+)',
+                        r'/assets/main.min.css?v=\1-mobile',
                         html,
                     )
                     content = html.encode('utf-8')
