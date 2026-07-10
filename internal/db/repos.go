@@ -493,25 +493,39 @@ type GlobalStats struct {
 
 // GlobalStats reads request_profiles and returns site-wide totals plus the
 // top-N specs and categories by request volume.
-func (d *DB) GlobalStats(ctx context.Context, topN int) (GlobalStats, error) {
+func (d *DB) GlobalStats(ctx context.Context, topN int, allowedTypes []string) (GlobalStats, error) {
 	if topN <= 0 {
 		topN = 20
 	}
 	var g GlobalStats
 
+	// Restrict every rollup to the official category set so historical or
+	// free-form request types (e.g. "cat", "background") don't pollute /stats.
+	where := ""
+	filterArgs := make([]any, 0, len(allowedTypes))
+	if len(allowedTypes) > 0 {
+		ph := make([]string, len(allowedTypes))
+		for i, t := range allowedTypes {
+			ph[i] = "?"
+			filterArgs = append(filterArgs, t)
+		}
+		where = " WHERE type IN (" + strings.Join(ph, ",") + ")"
+	}
+
 	row := d.QueryRowContext(ctx, `
 		SELECT COALESCE(SUM(request_count),0), COALESCE(SUM(view_count),0),
 		       COALESCE(SUM(download_count),0), COUNT(*)
-		  FROM request_profiles`)
+		  FROM request_profiles`+where, filterArgs...)
 	if err := row.Scan(&g.TotalRequests, &g.TotalViews, &g.TotalDownloads, &g.ProfileCount); err != nil {
 		return g, err
 	}
 
+	specArgs := append(append([]any{}, filterArgs...), topN)
 	specRows, err := d.QueryContext(ctx, `
 		SELECT type, width, height, keyword, request_count, view_count, download_count
-		  FROM request_profiles
+		  FROM request_profiles`+where+`
 		 ORDER BY request_count DESC, view_count DESC
-		 LIMIT ?`, topN)
+		 LIMIT ?`, specArgs...)
 	if err != nil {
 		return g, err
 	}
@@ -528,12 +542,13 @@ func (d *DB) GlobalStats(ctx context.Context, topN int) (GlobalStats, error) {
 		return g, err
 	}
 
+	catArgs := append(append([]any{}, filterArgs...), topN)
 	catRows, err := d.QueryContext(ctx, `
 		SELECT type, SUM(request_count), SUM(view_count)
-		  FROM request_profiles
+		  FROM request_profiles`+where+`
 		 GROUP BY type
 		 ORDER BY SUM(request_count) DESC
-		 LIMIT ?`, topN)
+		 LIMIT ?`, catArgs...)
 	if err != nil {
 		return g, err
 	}

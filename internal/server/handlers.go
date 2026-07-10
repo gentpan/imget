@@ -550,7 +550,7 @@ func (s *Server) handleTrackBeacon(w http.ResponseWriter, r *http.Request, width
 // handleStats renders /stats — a site-wide rollup of the local library size and
 // per-(type × resolution) request demand pulled from request_profiles.
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
-	gs, err := s.deps.DB.GlobalStats(r.Context(), 20)
+	gs, err := s.deps.DB.GlobalStats(r.Context(), 20, source.AllowedTypes)
 	if err != nil {
 		s.deps.Logger.Warn("global stats failed", "err", err)
 		s.renderError(w, r, http.StatusServiceUnavailable, "统计不可用", "无法读取统计数据，请稍后再试。")
