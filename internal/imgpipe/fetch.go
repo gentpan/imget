@@ -26,6 +26,12 @@ type FetchRequest struct {
 	Count   int    // how many fresh originals to download
 	Page    int    // upstream pagination (0 = let provider default)
 	Order   string // upstream order hint (e.g. "latest"); empty = provider default
+
+	// AllProviders unions candidate URLs from every provider (source.FetchAll)
+	// instead of stopping at the first non-empty one (source.Chain). The bulk
+	// topup job sets this so newly-added sources actually contribute; serve-time
+	// prefetch leaves it false to keep latency low.
+	AllProviders bool
 }
 
 // FetchToLocal downloads up to req.Count new images into images/original/{type}/,
@@ -50,7 +56,11 @@ func (p *Pipeline) FetchToLocal(ctx context.Context, req FetchRequest) ([]string
 		Order:   req.Order,
 	}
 
-	urls, err := source.Chain(ctx, p.sources, srcReq)
+	fetch := source.Chain
+	if req.AllProviders {
+		fetch = source.FetchAll
+	}
+	urls, err := fetch(ctx, p.sources, srcReq)
 	if err != nil {
 		return nil, err
 	}

@@ -461,6 +461,24 @@ func buildProviders(cfg *config.Config) []source.Provider {
 			PerPage:       cfg.PixabayPerPage,
 		}))
 	}
+	// Unsplash (keyed, true originals) sits just after the other keyed sources.
+	if cfg.UnsplashAccessKey != "" {
+		out = append(out, source.NewUnsplash(source.UnsplashConfig{
+			AccessKey: cfg.UnsplashAccessKey,
+		}))
+	}
+	// CC / no-key providers — the volume backstop for the topup FetchAll union.
+	if cfg.OpenverseEnabled {
+		out = append(out, source.NewOpenverse(source.OpenverseConfig{
+			ClientID:     cfg.OpenverseClientID,
+			ClientSecret: cfg.OpenverseClientSecret,
+		}))
+	}
+	if cfg.WikimediaEnabled {
+		out = append(out, source.NewWikimedia(source.WikimediaConfig{
+			UserAgent: cfg.WikimediaUserAgent,
+		}))
+	}
 	out = append(out, source.NewPicsum())
 	return out
 }

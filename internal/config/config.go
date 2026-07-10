@@ -56,6 +56,17 @@ type Config struct {
 	PexelsPerPage       int
 	PexelsMinWidth      int // skip Pexels hits whose original is narrower than this
 
+	// CC / no-key providers. Wikimedia and Openverse work without credentials;
+	// Openverse client creds and the Unsplash key only raise limits / unlock the
+	// source. Empty disables the keyed source (Unsplash) or runs anonymously
+	// (Openverse).
+	WikimediaEnabled      bool
+	WikimediaUserAgent    string
+	OpenverseEnabled      bool
+	OpenverseClientID     string
+	OpenverseClientSecret string
+	UnsplashAccessKey     string
+
 	DefaultFormat  string
 	EnabledFormats []string // explicit allow-list, e.g. ["webp","avif"] or ["webp"]
 	WebPQuality    int
@@ -122,6 +133,13 @@ func Load() (*Config, error) {
 		PexelsCooldownSec:   envInt("PEXELS_COOLDOWN_SEC", 300),
 		PexelsPerPage:       envInt("PEXELS_PER_PAGE", 30),
 		PexelsMinWidth:      envInt("PEXELS_MIN_WIDTH", 1920),
+
+		WikimediaEnabled:      envBool("WIKIMEDIA_ENABLED", true),
+		WikimediaUserAgent:    envStr("WIKIMEDIA_USER_AGENT", ""),
+		OpenverseEnabled:      envBool("OPENVERSE_ENABLED", true),
+		OpenverseClientID:     envStr("OPENVERSE_CLIENT_ID", ""),
+		OpenverseClientSecret: envStr("OPENVERSE_CLIENT_SECRET", ""),
+		UnsplashAccessKey:     envStr("UNSPLASH_ACCESS_KEY", ""),
 
 		DefaultFormat:  strings.ToLower(envStr("DEFAULT_FORMAT", "webp")),
 		EnabledFormats: parseList(envStr("ENABLED_FORMATS", "webp,avif")),

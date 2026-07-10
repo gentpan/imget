@@ -93,26 +93,33 @@ func TopupByType(ctx context.Context, log *slog.Logger, sqlDB *db.DB, p *imgpipe
 		if maxN > minN {
 			n += rng.Intn(maxN - minN + 1)
 		}
-		page := 1 + rng.Intn(10) // 1..10 — Pexels has plenty of 4K hits in this range; Pixabay also reaches its hit cap around page 10. Going deeper trades variety for empty pages that fall through.
+		// Rotate through the type's sub-keyword expansion: each run queries a
+		// fresh narrow phrase, unlocking a new result window instead of
+		// re-sampling the parent keyword's "latest" page. The image is still
+		// filed under the parent type, so the public 20 buckets are unchanged.
+		keyword := source.PickSubKeyword(typ, rng.Int())
+		page := 1 + rng.Intn(6) // narrow sub-keywords have shallower result sets than the broad parent term.
 
 		saved, err := p.FetchToLocal(ctx, imgpipe.FetchRequest{
-			Type:  typ,
-			Count: n,
-			Page:  page,
-			Order: "latest",
+			Type:         typ,
+			Keyword:      keyword,
+			Count:        n,
+			Page:         page,
+			Order:        "latest",
+			AllProviders: true, // union every source so CC providers contribute, not just the first non-empty one.
 		})
 		errText := ""
 		if err != nil {
 			errText = err.Error()
 			errs++
 		}
-		_ = sqlDB.AddRefreshLog(ctx, "type:"+typ, 0, 0, typ, "", "daily-types", n, len(saved), errText)
+		_ = sqlDB.AddRefreshLog(ctx, "type:"+typ, 0, 0, typ, keyword, "daily-types", n, len(saved), errText)
 
 		if err != nil {
-			log.Warn("topup-types error", "type", typ, "page", page, "requested", n, "err", err)
+			log.Warn("topup-types error", "type", typ, "keyword", keyword, "page", page, "requested", n, "err", err)
 			continue
 		}
-		log.Info("topup-types ok", "type", typ, "page", page, "requested", n, "saved", len(saved))
+		log.Info("topup-types ok", "type", typ, "keyword", keyword, "page", page, "requested", n, "saved", len(saved))
 		totalSaved += len(saved)
 	}
 
