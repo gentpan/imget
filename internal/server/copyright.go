@@ -243,7 +243,9 @@ func localizedCopyrightDetails(code string, site SiteContext) CopyrightDetails {
 		v = strings.ReplaceAll(v, "{{site}}", brandName)
 		v = strings.ReplaceAll(v, "{{name}}", brandName)
 		v = strings.ReplaceAll(v, "{{year}}", strconv.Itoa(site.CopyrightYear))
-		v = strings.ReplaceAll(v, "{{email}}", site.DMCAEmail)
+		// Display the address with "@" shown as "#" (anti-scrape obfuscation):
+		// e.g. dmca@toimg.com renders as dmca#toimg.com.
+		v = strings.ReplaceAll(v, "{{email}}", strings.ReplaceAll(site.DMCAEmail, "@", "#"))
 		return v
 	}
 	warning := repl(text.Warning)

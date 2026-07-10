@@ -296,7 +296,11 @@ func (s *Server) renderWallpaperDetail(w http.ResponseWriter, r *http.Request, r
 	cdn := s.deps.Pipeline.CDNURLFor(r.Context(), rel)
 	rawURL := cdn
 	if rawURL == "" {
-		rawURL = s.deps.Cfg.SiteBaseURL + "/" + rel
+		// No CDN (R2 disabled): serve the original locally. `rel` is
+		// "original/{type}/{file}", but the local file route is
+		// /files/{type}/{file} (handleFileDirect resolves the original/ dir),
+		// so build that form rather than "/"+rel, which has no route and 404s.
+		rawURL = s.deps.Cfg.SiteBaseURL + "/files/" + typ + "/" + filepath.Base(rel)
 	}
 
 	shortURL := s.deps.Cfg.SiteBaseURL + "/" + typ

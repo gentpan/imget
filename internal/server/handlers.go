@@ -55,10 +55,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) localizedHomeData(r *http.Request, code string) map[string]any {
-	summary, err := s.deps.DB.LibrarySummary(r.Context())
-	if err != nil {
-		s.deps.Logger.Warn("library summary failed", "err", err)
-	}
+	summary := s.deps.Pipeline.LibrarySummary()
 	locale, _ := localizedHomeFor(code)
 	locale = localizeText(locale, s.site)
 	canonicalURL := s.site.BaseURL + "/" + locale.Code + "/"
