@@ -249,13 +249,10 @@ func (s *Server) handleOriginalByType(w http.ResponseWriter, r *http.Request, ra
 		strings.EqualFold(r.Header.Get("Sec-Fetch-Dest"), "image")
 	wantsHTML := strings.Contains(r.Header.Get("Accept"), "text/html") && !rawRequested
 
-	var rel string
-	var err error
-	if wantsHTML && keyword == "" && fixed == "" {
-		rel, err = s.deps.Pipeline.PickLargestOriginal(r.Context(), typ)
-	} else {
-		rel, err = s.deps.Pipeline.PickOriginal(r.Context(), typ, keyword, fixed)
-	}
+	// Category pages show a fresh random original on every visit (the page is
+	// rendered no-store). A fixed image is opt-in via ?r=N; a specific keyword
+	// narrows the pool. PickOriginal picks randomly when both are empty.
+	rel, err := s.deps.Pipeline.PickOriginal(r.Context(), typ, keyword, fixed)
 	if err != nil || rel == "" {
 		s.deps.Logger.Warn("wallpaper pick failed", "type", typ, "err", err)
 		http.Error(w, "no source available", http.StatusServiceUnavailable)
