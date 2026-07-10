@@ -96,6 +96,10 @@
         </div>
 
         <p class="stats-note" style="margin-top:24px"><a href="{{ .HomeURL }}">← 返回首页</a></p>
+
+{{ template "site-footer" . }}
+
+{{ template "site-info-modal" . }}
     </main>
     <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
 </body>

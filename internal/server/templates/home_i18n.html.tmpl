@@ -258,80 +258,9 @@
       <p>{{ .Locale.PrivacyCopy }}</p>
     </section>
 
-    <footer class="footer">
-      <div class="footer-inner">
-        <div class="footer-copy">
-          <p class="footer-copyright">© {{ .Site.CopyrightYear }} {{ .Locale.BrandName }}. All rights reserved.</p>
-        </div>
-        <div class="footer-stats" aria-label="{{ .Locale.FooterStatsAria }}">
-          <span class="footer-stat"><strong>{{ formatNumber .TotalCount }}</strong><span>{{ .Locale.ImagesLabel }}</span></span>
-          <span class="footer-stat"><strong>{{ formatBytes .TotalBytes }}</strong><span>{{ .Locale.StorageLabel }}</span></span>
-        </div>
-        <div class="footer-links">
-          <a class="footer-link-button" href="/stats">STATS</a>
-          <button class="footer-link-button" type="button" data-modal-tab="usage">INFO</button>
-          <a class="footer-link-button" href="https://x.com/gentpan" target="_blank" rel="noopener noreferrer">TWITTER</a>
-          <a class="footer-link-button" href="https://github.com/gentpan/imget" target="_blank" rel="noopener noreferrer">GITHUB</a>
-        </div>
-      </div>
-    </footer>
+{{ template "site-footer" . }}
 
-    <div class="site-modal" id="site-info-modal" hidden>
-      <div class="site-modal-backdrop" data-modal-close></div>
-      <div class="site-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="site-modal-title">
-        <div class="site-modal-head">
-          <div>
-            <p class="site-modal-eyebrow">{{ .Locale.BrandName }}</p>
-            <h2 id="site-modal-title">{{ .Locale.FooterInfo }}</h2>
-          </div>
-          <button class="site-modal-close" type="button" aria-label="{{ .Locale.CloseModalAria }}" data-modal-close>
-            <i class="fa-light fa-xmark" aria-hidden="true"></i>
-          </button>
-        </div>
-        <div class="site-modal-tabs" role="tablist" aria-label="{{ .Locale.FooterInfo }}">
-          <button class="site-modal-tab is-active" type="button" role="tab" aria-selected="true" data-tab="usage">{{ .Locale.UsageModalTitle }}</button>
-          <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="copyright">{{ .Locale.CopyrightModalTitle }}</button>
-          <button class="site-modal-tab" type="button" role="tab" aria-selected="false" data-tab="privacy">{{ .Locale.PrivacyModalTitle }}</button>
-        </div>
-        <div class="site-modal-body">
-          {{ if eq .Locale.Code "zh" }}
-          <section class="site-modal-panel is-active" data-panel="usage">
-            <p>{{ .Locale.BrandName }} 是一个用于动态图片调用、尺寸生成、格式转换与内容占位的工具站，适合文章头图、卡片配图、开发测试、内容演示与非商业展示等场景。</p>
-            <ul class="site-modal-list">
-              <li>支持通过尺寸、分类、固定参数、多图位与格式参数组合生成可直接访问的图片地址。</li>
-              <li>适合用于开发联调、原型展示、博客配图、站点占位图与内容模块测试。</li>
-              <li>当前站点主要面向学习研究、开发测试、内容占位与非商业用途场景。</li>
-              <li>如用于商业页面、广告投放、客户项目、再分发或素材库用途，请先自行确认授权范围与平台条款。</li>
-            </ul>
-          </section>
-          <section class="site-modal-panel" data-panel="copyright">
-            <p>{{ .Copyright.ModalIntro }}</p>
-            <ul class="site-modal-list">
-              {{ range .Copyright.ModalBullets }}<li>{{ . }}</li>{{ end }}
-            </ul>
-          </section>
-          <section class="site-modal-panel" data-panel="privacy">
-            <p>{{ .Locale.BrandName }} 不以收集个人隐私数据为目的，站点仅保留维持服务运行所需的基础请求信息与统计信息，用于缓存优化、故障排查和访问分析。</p>
-            <ul class="site-modal-list">
-              <li>系统可能记录访问时间、请求路径、尺寸参数、分类参数、来源请求头等基础技术信息。</li>
-              <li>本站不主动要求用户提交身份证、支付信息、银行卡等敏感个人信息。</li>
-              <li>如页面启用了统计脚本，其用途仅限于访问统计、服务稳定性分析与功能优化。</li>
-              <li>若你不希望特定链接长期被访问或索引，建议避免公开传播对应地址，并按实际需要联系处理。</li>
-            </ul>
-          </section>
-          {{ else }}
-          <section class="site-modal-panel is-active" data-panel="usage"><p>{{ .Locale.UsageLead }}</p></section>
-          <section class="site-modal-panel" data-panel="copyright">
-            <p>{{ .Copyright.ModalIntro }}</p>
-            <ul class="site-modal-list">
-              {{ range .Copyright.ModalBullets }}<li>{{ . }}</li>{{ end }}
-            </ul>
-          </section>
-          <section class="site-modal-panel" data-panel="privacy"><p>{{ .Locale.PrivacyCopy }}</p></section>
-          {{ end }}
-        </div>
-      </div>
-    </div>
+{{ template "site-info-modal" . }}
   </main>
 
   <script>

@@ -482,16 +482,29 @@ func (s *Server) handleFileDetail(w http.ResponseWriter, r *http.Request, typ, f
 	transformPath := "/c/" + typ + "/" + file
 	transformLinks := s.buildFileTransformRows(transformPath, meta)
 
+	// Mirror the wallpaper page's copy-able rows: direct link, dedicated page,
+	// download, then every transform size/format.
+	imageFormats := []formatRow{
+		{"直链", rawURL},
+		{"专属页面", pageURL},
+		{"下载", downloadURL},
+	}
+	imageFormats = append(imageFormats, transformLinks...)
+
 	data := map[string]any{
 		"Site":           s.site,
 		"Type":           typ,
+		"TypeLabel":      TypeChineseLabel(typ),
 		"FileName":       filepath.Base(rel),
+		"FormatLabel":    FormatImageFormatLabel(meta.Extension),
+		"PoolCount":      s.deps.Pipeline.CountOriginalsForType(typ),
 		"PageURL":        pageURL,
 		"RawURL":         rawURL,
 		"DownloadURL":    downloadURL,
 		"HomeURL":        s.deps.Cfg.SiteBaseURL + "/",
 		"Meta":           meta,
 		"TransformLinks": transformLinks,
+		"ImageFormats":   imageFormats,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
@@ -569,14 +582,22 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		topSpec = specs[0]
 	}
 
+	// Locale + copyright power the shared homepage footer and info modal so the
+	// stats page carries the same header/footer chrome as the home page.
+	locale, _ := localizedHomeFor("zh")
+	locale = localizeText(locale, s.site)
+
 	data := map[string]any{
 		"Site":           s.site,
 		"HomeURL":        s.deps.Cfg.SiteBaseURL + "/",
+		"Locale":         locale,
+		"Copyright":      localizedCopyrightDetails("zh", s.site),
 		"TotalRequests":  gs.TotalRequests,
 		"TotalViews":     gs.TotalViews,
 		"TotalDownloads": gs.TotalDownloads,
 		"ProfileCount":   gs.ProfileCount,
 		"TotalImages":    lib.TotalImages,
+		"TotalCount":     lib.TotalImages,
 		"TotalBytes":     lib.TotalBytes,
 		"TopSpec":        topSpec,
 		"TopSpecs":       specs,
