@@ -66,6 +66,8 @@ type Config struct {
 	OpenverseClientID     string
 	OpenverseClientSecret string
 	UnsplashAccessKey     string
+	BingEnabled           bool
+	BingMarket            string
 
 	DefaultFormat  string
 	EnabledFormats []string // explicit allow-list, e.g. ["webp","avif"] or ["webp"]
@@ -140,6 +142,8 @@ func Load() (*Config, error) {
 		OpenverseClientID:     envStr("OPENVERSE_CLIENT_ID", ""),
 		OpenverseClientSecret: envStr("OPENVERSE_CLIENT_SECRET", ""),
 		UnsplashAccessKey:     envStr("UNSPLASH_ACCESS_KEY", ""),
+		BingEnabled:           envBool("BING_ENABLED", true),
+		BingMarket:            envStr("BING_MARKET", "en-US"),
 
 		DefaultFormat:  strings.ToLower(envStr("DEFAULT_FORMAT", "webp")),
 		EnabledFormats: parseList(envStr("ENABLED_FORMATS", "webp,avif")),

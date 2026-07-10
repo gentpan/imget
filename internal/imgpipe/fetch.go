@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"imget/internal/db"
 	"imget/internal/mediatype"
 	"imget/internal/source"
 )
@@ -60,11 +61,11 @@ func (p *Pipeline) FetchToLocal(ctx context.Context, req FetchRequest) ([]string
 	if req.AllProviders {
 		fetch = source.FetchAll
 	}
-	urls, err := fetch(ctx, p.sources, srcReq)
+	candidates, err := fetch(ctx, p.sources, srcReq)
 	if err != nil {
 		return nil, err
 	}
-	if len(urls) == 0 {
+	if len(candidates) == 0 {
 		return nil, errors.New("no source URLs returned")
 	}
 
@@ -76,19 +77,21 @@ func (p *Pipeline) FetchToLocal(ctx context.Context, req FetchRequest) ([]string
 	saved := make([]string, 0, count)
 	seen := map[string]struct{}{}
 
-	for _, u := range urls {
+	for _, c := range candidates {
 		if len(saved) >= count {
 			break
 		}
-		rel, err := p.downloadOne(ctx, u, dstDir, typ, seen)
+		rel, err := p.downloadOne(ctx, c.URL, dstDir, typ, seen)
 		if err != nil {
-			p.log.Debug("download skipped", "url", u, "err", err)
+			p.log.Debug("download skipped", "url", c.URL, "err", err)
 			continue
 		}
 		if rel == "" {
 			continue
 		}
 		saved = append(saved, rel)
+		// Record provenance (provider + upstream URL) keyed by the file's sha1.
+		p.recordSource(ctx, rel, typ, c.Provider, c.URL)
 		// Queue upload of the freshly saved original.
 		p.QueueUpload(rel)
 	}
@@ -97,6 +100,29 @@ func (p *Pipeline) FetchToLocal(ctx context.Context, req FetchRequest) ([]string
 		return nil, errors.New("all candidate downloads failed or duplicated")
 	}
 	return saved, nil
+}
+
+// recordSource stores provenance for a freshly-saved original. The on-disk name
+// is "{sha1}.{ext}", so the stem is the sha1 used as the lookup key. Best-effort:
+// a failure here never fails the fetch.
+func (p *Pipeline) recordSource(ctx context.Context, rel, typ, provider, srcURL string) {
+	if p.db == nil || provider == "" {
+		return
+	}
+	base := filepath.Base(rel)
+	sha := strings.TrimSuffix(base, filepath.Ext(base))
+	if sha == "" {
+		return
+	}
+	if err := p.db.AddImageSource(ctx, db.ImageSource{
+		SHA1:      sha,
+		Type:      typ,
+		Provider:  provider,
+		SourceURL: srcURL,
+		FetchedAt: time.Now().Unix(),
+	}); err != nil {
+		p.log.Debug("record source failed", "rel", rel, "err", err)
+	}
 }
 
 func (p *Pipeline) downloadOne(ctx context.Context, u, dstDir, typ string, seen map[string]struct{}) (string, error) {

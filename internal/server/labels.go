@@ -239,3 +239,28 @@ func GetFileMeta(absPath string) FileMeta {
 	}
 	return m
 }
+
+// providerLabels maps internal provider slugs to human-facing source names
+// shown on image pages.
+var providerLabels = map[string]string{
+	"pexels":    "Pexels",
+	"pixabay":   "Pixabay",
+	"wikimedia": "Wikimedia Commons",
+	"openverse": "Openverse",
+	"unsplash":  "Unsplash",
+	"bing":      "Bing",
+	"picsum":    "Picsum",
+}
+
+// ProviderLabel returns the display name for a provider slug, or a capitalized
+// fallback for unknown providers ("" for empty).
+func ProviderLabel(p string) string {
+	p = strings.ToLower(strings.TrimSpace(p))
+	if p == "" {
+		return ""
+	}
+	if v, ok := providerLabels[p]; ok {
+		return v
+	}
+	return strings.ToUpper(p[:1]) + p[1:]
+}

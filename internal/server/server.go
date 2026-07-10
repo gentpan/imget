@@ -324,6 +324,8 @@ func (s *Server) renderWallpaperDetail(w http.ResponseWriter, r *http.Request, r
 		}
 	}
 
+	srcLabel, srcURL := s.imageSourceFor(r.Context(), rel)
+
 	filename := filepath.Base(rel)
 	downloadURL := s.deps.Cfg.SiteBaseURL + "/files/" + typ + "/" + filename + "?download=1"
 	transformPath := "/c/" + typ + "/" + filename
@@ -349,6 +351,8 @@ func (s *Server) renderWallpaperDetail(w http.ResponseWriter, r *http.Request, r
 		"PageURL":      dedicatedPageURL,
 		"DownloadURL":  downloadURL,
 		"Meta":         meta,
+		"SourceLabel":  srcLabel,
+		"SourceURL":    srcURL,
 		"PoolCount":    s.deps.Pipeline.CountOriginalsForType(typ),
 		"HomeURL":      s.deps.Cfg.SiteBaseURL + "/",
 		"ImageFormats": formats,

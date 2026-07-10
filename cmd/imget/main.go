@@ -479,6 +479,12 @@ func buildProviders(cfg *config.Config) []source.Provider {
 			UserAgent: cfg.WikimediaUserAgent,
 		}))
 	}
+	// Bing daily wallpaper — scenic-only, contributes to the landscape bucket.
+	if cfg.BingEnabled {
+		out = append(out, source.NewBing(source.BingConfig{
+			Market: cfg.BingMarket,
+		}))
+	}
 	out = append(out, source.NewPicsum())
 	return out
 }

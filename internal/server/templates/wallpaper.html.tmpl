@@ -31,6 +31,7 @@
                     {{ if .Meta.Width }}<div class="stat"><strong>原始分辨率</strong><span>{{ .Meta.Width }} × {{ .Meta.Height }}</span></div>{{ end }}
                     {{ if .Meta.SizeHuman }}<div class="stat"><strong>文件大小</strong><span>{{ .Meta.SizeHuman }}</span></div>{{ end }}
                     {{ if .FormatLabel }}<div class="stat"><strong>格式</strong><span>{{ .FormatLabel }}</span></div>{{ end }}
+                    {{ if .SourceLabel }}<div class="stat"><strong>来源</strong><span>{{ if .SourceURL }}<a href="{{ .SourceURL }}" target="_blank" rel="noreferrer nofollow">{{ .SourceLabel }}</a>{{ else }}{{ .SourceLabel }}{{ end }}</span></div>{{ end }}
                     {{ if .FixedR }}<div class="stat"><strong>固定 r</strong><span>{{ .FixedR }}</span></div>{{ end }}
                 </div>
             </div>

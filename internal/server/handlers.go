@@ -491,12 +491,16 @@ func (s *Server) handleFileDetail(w http.ResponseWriter, r *http.Request, typ, f
 	}
 	imageFormats = append(imageFormats, transformLinks...)
 
+	srcLabel, srcURL := s.imageSourceFor(r.Context(), rel)
+
 	data := map[string]any{
 		"Site":           s.site,
 		"Type":           typ,
 		"TypeLabel":      TypeChineseLabel(typ),
 		"FileName":       filepath.Base(rel),
 		"FormatLabel":    FormatImageFormatLabel(meta.Extension),
+		"SourceLabel":    srcLabel,
+		"SourceURL":      srcURL,
 		"PoolCount":      s.deps.Pipeline.CountOriginalsForType(typ),
 		"PageURL":        pageURL,
 		"RawURL":         rawURL,
@@ -608,6 +612,22 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	if err := s.templates.render(w, "stats.html.tmpl", data); err != nil {
 		s.deps.Logger.Error("stats render", "err", err)
 	}
+}
+
+// imageSourceFor looks up provenance for a served original by its rel path
+// ("original/{type}/{sha1}.{ext}"). Returns ("","") when unrecorded (e.g. an
+// image downloaded before source tracking existed).
+func (s *Server) imageSourceFor(ctx context.Context, rel string) (label, url string) {
+	base := filepath.Base(rel)
+	sha := strings.TrimSuffix(base, filepath.Ext(base))
+	if sha == "" {
+		return "", ""
+	}
+	src, err := s.deps.DB.GetImageSource(ctx, sha)
+	if err != nil || src == nil {
+		return "", ""
+	}
+	return ProviderLabel(src.Provider), src.SourceURL
 }
 
 // ============================================================

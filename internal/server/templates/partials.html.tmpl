@@ -8,11 +8,11 @@
           <span class="footer-stat"><strong>{{ formatNumber .TotalCount }}</strong><span>{{ .Locale.ImagesLabel }}</span></span>
           <span class="footer-stat"><strong>{{ formatBytes .TotalBytes }}</strong><span>{{ .Locale.StorageLabel }}</span></span>
         </div>
-        <div class="footer-links">
-          <a class="footer-link-button" href="/stats">STATS</a>
-          <button class="footer-link-button" type="button" data-modal-tab="usage">INFO</button>
-          <a class="footer-link-button" href="https://x.com/gentpan" target="_blank" rel="noopener noreferrer">TWITTER</a>
-          <a class="footer-link-button" href="https://github.com/gentpan/imget" target="_blank" rel="noopener noreferrer">GITHUB</a>
+        <div class="footer-links footer-icons">
+          <a class="footer-link-button" href="/stats" aria-label="全站统计" title="全站统计"><i class="fa-light fa-chart-simple" aria-hidden="true"></i></a>
+          <button class="footer-link-button" type="button" data-modal-tab="usage" aria-label="说明" title="说明"><i class="fa-light fa-circle-info" aria-hidden="true"></i></button>
+          <a class="footer-link-button" href="https://x.com/gentpan" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X" title="Twitter / X"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i></a>
+          <a class="footer-link-button" href="https://github.com/gentpan/imget" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
         </div>
       </div>
     </footer>

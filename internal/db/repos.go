@@ -547,3 +547,45 @@ func (d *DB) GlobalStats(ctx context.Context, topN int) (GlobalStats, error) {
 	}
 	return g, catRows.Err()
 }
+
+// ============================================================
+// image_sources (provenance)
+// ============================================================
+
+// ImageSource records where one local original was fetched from.
+type ImageSource struct {
+	SHA1      string
+	Type      string
+	Provider  string
+	SourceURL string
+	FetchedAt int64
+}
+
+// AddImageSource upserts provenance for a downloaded original. Idempotent on
+// sha1 so re-recording the same file is harmless.
+func (d *DB) AddImageSource(ctx context.Context, s ImageSource) error {
+	_, err := d.ExecContext(ctx, `
+		INSERT INTO image_sources (sha1, type, provider, source_url, fetched_at)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(sha1) DO UPDATE SET
+		    type=excluded.type, provider=excluded.provider,
+		    source_url=excluded.source_url, fetched_at=excluded.fetched_at`,
+		s.SHA1, s.Type, s.Provider, s.SourceURL, s.FetchedAt)
+	return err
+}
+
+// GetImageSource returns provenance for a sha1, or nil if unrecorded (e.g. an
+// original downloaded before provenance tracking existed).
+func (d *DB) GetImageSource(ctx context.Context, sha1 string) (*ImageSource, error) {
+	row := d.QueryRowContext(ctx, `
+		SELECT sha1, type, provider, source_url, fetched_at
+		  FROM image_sources WHERE sha1 = ?`, sha1)
+	var s ImageSource
+	if err := row.Scan(&s.SHA1, &s.Type, &s.Provider, &s.SourceURL, &s.FetchedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &s, nil
+}
