@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -521,6 +522,65 @@ func (s *Server) handleTrackBeacon(w http.ResponseWriter, r *http.Request, width
 		"view_count":     viewCount,
 		"download_count": downloadCount,
 	})
+}
+
+// handleStats renders /stats — a site-wide rollup of the local library size and
+// per-(type × resolution) request demand pulled from request_profiles.
+func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
+	gs, err := s.deps.DB.GlobalStats(r.Context(), 20)
+	if err != nil {
+		s.deps.Logger.Warn("global stats failed", "err", err)
+		s.renderError(w, r, http.StatusServiceUnavailable, "统计不可用", "无法读取统计数据，请稍后再试。")
+		return
+	}
+	lib := s.deps.Pipeline.LibrarySummary()
+
+	specs := make([]map[string]any, 0, len(gs.TopSpecs))
+	for _, sp := range gs.TopSpecs {
+		specs = append(specs, map[string]any{
+			"Type":       sp.Type,
+			"TypeLabel":  TypeChineseLabel(sp.Type),
+			"Resolution": fmt.Sprintf("%d × %d", sp.Width, sp.Height),
+			"Keyword":    sp.Keyword,
+			"Requests":   sp.Requests,
+			"Views":      sp.Views,
+		})
+	}
+	cats := make([]map[string]any, 0, len(gs.TopCategories))
+	for _, c := range gs.TopCategories {
+		cats = append(cats, map[string]any{
+			"Type":      c.Type,
+			"TypeLabel": TypeChineseLabel(c.Type),
+			"Requests":  c.Requests,
+			"Views":     c.Views,
+			"Library":   lib.ByType[c.Type],
+		})
+	}
+
+	// The single most-referenced spec (top of the list), used for the hero stat.
+	var topSpec map[string]any
+	if len(specs) > 0 {
+		topSpec = specs[0]
+	}
+
+	data := map[string]any{
+		"Site":           s.site,
+		"HomeURL":        s.deps.Cfg.SiteBaseURL + "/",
+		"TotalRequests":  gs.TotalRequests,
+		"TotalViews":     gs.TotalViews,
+		"TotalDownloads": gs.TotalDownloads,
+		"ProfileCount":   gs.ProfileCount,
+		"TotalImages":    lib.TotalImages,
+		"TotalBytes":     lib.TotalBytes,
+		"TopSpec":        topSpec,
+		"TopSpecs":       specs,
+		"TopCategories":  cats,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=120")
+	if err := s.templates.render(w, "stats.html.tmpl", data); err != nil {
+		s.deps.Logger.Error("stats render", "err", err)
+	}
 }
 
 // ============================================================

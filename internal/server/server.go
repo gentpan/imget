@@ -91,6 +91,12 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) {
 			s.handleLocalizedHome(w, r, parts[0])
 			return
 		}
+		// /stats — global library + request statistics page. Reserved before the
+		// type shortcut so it can't be shadowed by a category named "stats".
+		if parts[0] == "stats" {
+			s.handleStats(w, r)
+			return
+		}
 		// /{type} — wallpaper shortcut: 1 segment matching an allowed type
 		// returns one original-resolution image (302 to CDN if configured).
 		if source.IsAllowedType(parts[0]) {

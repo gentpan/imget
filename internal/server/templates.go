@@ -23,6 +23,7 @@ func loadTemplates(overrideDir string) (*templates, error) {
 	funcs := template.FuncMap{
 		"formatBytes":  humanBytes,
 		"formatNumber": formatNumber,
+		"add1":         func(i int) int { return i + 1 },
 		"jsonStr":      jsonStr,
 		"typeLabel":    TypeChineseLabel,
 		"typeDesc":     TypeChineseDescription,

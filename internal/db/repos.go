@@ -460,3 +460,90 @@ func (d *DB) LibrarySummary(ctx context.Context) (LibrarySummary, error) {
 	}
 	return s, rows.Err()
 }
+
+// SpecStat is one (type × resolution) request profile rollup.
+type SpecStat struct {
+	Type      string
+	Width     int
+	Height    int
+	Keyword   string
+	Requests  int64
+	Views     int64
+	Downloads int64
+}
+
+// CategoryStat aggregates request/view counts for one category across all sizes.
+type CategoryStat struct {
+	Type     string
+	Requests int64
+	Views    int64
+}
+
+// GlobalStats is the whole-site request rollup shown on /stats. All numbers
+// come from request_profiles, which tracks demand per (type, size, keyword)
+// signature rather than per individual file.
+type GlobalStats struct {
+	TotalRequests  int64
+	TotalViews     int64
+	TotalDownloads int64
+	ProfileCount   int64
+	TopSpecs       []SpecStat     // most-requested (type × resolution) profiles
+	TopCategories  []CategoryStat // most-requested categories
+}
+
+// GlobalStats reads request_profiles and returns site-wide totals plus the
+// top-N specs and categories by request volume.
+func (d *DB) GlobalStats(ctx context.Context, topN int) (GlobalStats, error) {
+	if topN <= 0 {
+		topN = 20
+	}
+	var g GlobalStats
+
+	row := d.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(request_count),0), COALESCE(SUM(view_count),0),
+		       COALESCE(SUM(download_count),0), COUNT(*)
+		  FROM request_profiles`)
+	if err := row.Scan(&g.TotalRequests, &g.TotalViews, &g.TotalDownloads, &g.ProfileCount); err != nil {
+		return g, err
+	}
+
+	specRows, err := d.QueryContext(ctx, `
+		SELECT type, width, height, keyword, request_count, view_count, download_count
+		  FROM request_profiles
+		 ORDER BY request_count DESC, view_count DESC
+		 LIMIT ?`, topN)
+	if err != nil {
+		return g, err
+	}
+	defer specRows.Close()
+	for specRows.Next() {
+		var s SpecStat
+		if err := specRows.Scan(&s.Type, &s.Width, &s.Height, &s.Keyword,
+			&s.Requests, &s.Views, &s.Downloads); err != nil {
+			return g, err
+		}
+		g.TopSpecs = append(g.TopSpecs, s)
+	}
+	if err := specRows.Err(); err != nil {
+		return g, err
+	}
+
+	catRows, err := d.QueryContext(ctx, `
+		SELECT type, SUM(request_count), SUM(view_count)
+		  FROM request_profiles
+		 GROUP BY type
+		 ORDER BY SUM(request_count) DESC
+		 LIMIT ?`, topN)
+	if err != nil {
+		return g, err
+	}
+	defer catRows.Close()
+	for catRows.Next() {
+		var c CategoryStat
+		if err := catRows.Scan(&c.Type, &c.Requests, &c.Views); err != nil {
+			return g, err
+		}
+		g.TopCategories = append(g.TopCategories, c)
+	}
+	return g, catRows.Err()
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>全站统计 - {{ .Site.Name }}</title>
+    {{ if .Site.HasFontAwesome }}<link rel="stylesheet" href="{{ .Site.FontAwesomeCSSURL }}">{{ end }}
+    {{ if .Site.HasAnalytics }}<script defer src="{{ .Site.AnalyticsScript }}"{{ if .Site.AnalyticsID }} data-website-id="{{ .Site.AnalyticsID }}"{{ end }}></script>{{ end }}
+    <link rel="stylesheet" href="/assets/main.min.css?v={{ .Site.AssetVersion }}">
+    <style>
+      .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0}
+      .stats-card{border:1px solid rgba(128,128,128,.2);border-radius:12px;padding:16px 18px;background:rgba(128,128,128,.04)}
+      .stats-card strong{display:block;font-size:1.7rem;line-height:1.15;font-variant-numeric:tabular-nums}
+      .stats-card span{display:block;margin-top:4px;font-size:.82rem;opacity:.65}
+      .stats-hero{border:1px solid rgba(128,128,128,.2);border-radius:14px;padding:20px 22px;margin:18px 0;background:rgba(99,102,241,.06)}
+      .stats-hero .eyebrow{font-size:.8rem;opacity:.6;margin:0 0 6px}
+      .stats-hero .big{font-size:1.5rem;font-weight:700;margin:0}
+      .stats-hero .sub{margin:6px 0 0;opacity:.7;font-size:.9rem}
+      .stats-table{width:100%;border-collapse:collapse;font-size:.9rem;overflow-x:auto;display:block}
+      .stats-table table{width:100%;border-collapse:collapse}
+      .stats-table th,.stats-table td{text-align:left;padding:9px 12px;border-bottom:1px solid rgba(128,128,128,.15);white-space:nowrap}
+      .stats-table th{font-weight:600;opacity:.7;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+      .stats-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+      .stats-table .rank{opacity:.5;width:2.2rem}
+      .stats-section-title{margin:26px 0 6px;font-size:1.05rem}
+      .stats-note{opacity:.55;font-size:.82rem;margin:2px 0 0}
+    </style>
+</head>
+
+<body class="page-image-detail">
+    <main class="wrap">
+        <div class="topbar">
+            <a class="brand" href="{{ .HomeURL }}">
+                <span class="brand-mark"><img src="/assets/logo.png" alt="{{ .Site.Name }} logo"></span>
+                <span>{{ .Site.Name }}</span>
+            </a>
+            <div class="meta-badges">
+                <span class="type-badge">全站统计 <em>stats</em></span>
+            </div>
+        </div>
+
+        {{ if .TopSpec }}
+        <section class="stats-hero">
+            <p class="eyebrow">引用最多的规格</p>
+            <p class="big">{{ .TopSpec.TypeLabel }} · {{ .TopSpec.Resolution }}</p>
+            <p class="sub">被请求 <strong>{{ formatNumber .TopSpec.Requests }}</strong> 次{{ if .TopSpec.Keyword }} · 关键词「{{ .TopSpec.Keyword }}」{{ end }}</p>
+        </section>
+        {{ end }}
+
+        <div class="stats-grid">
+            <div class="stats-card"><strong>{{ formatNumber .TotalRequests }}</strong><span>总请求次数</span></div>
+            <div class="stats-card"><strong>{{ formatNumber .TotalViews }}</strong><span>总浏览次数</span></div>
+            <div class="stats-card"><strong>{{ formatNumber .TotalDownloads }}</strong><span>总下载次数</span></div>
+            <div class="stats-card"><strong>{{ formatNumber .TotalImages }}</strong><span>图库原图</span></div>
+            <div class="stats-card"><strong>{{ formatBytes .TotalBytes }}</strong><span>占用空间</span></div>
+            <div class="stats-card"><strong>{{ formatNumber .ProfileCount }}</strong><span>规格档案数</span></div>
+        </div>
+
+        <h2 class="stats-section-title">分类排行（按请求）</h2>
+        <p class="stats-note">按分类汇总所有分辨率的请求量，含当前图库存量。</p>
+        <div class="stats-table">
+          <table>
+            <thead><tr><th class="rank">#</th><th>分类</th><th class="num">请求</th><th class="num">浏览</th><th class="num">图库</th></tr></thead>
+            <tbody>
+            {{ range $i, $c := .TopCategories }}
+              <tr>
+                <td class="rank">{{ add1 $i }}</td>
+                <td>{{ $c.TypeLabel }} <em style="opacity:.5">{{ $c.Type }}</em></td>
+                <td class="num">{{ formatNumber $c.Requests }}</td>
+                <td class="num">{{ formatNumber $c.Views }}</td>
+                <td class="num">{{ formatNumber $c.Library }}</td>
+              </tr>
+            {{ end }}
+            </tbody>
+          </table>
+        </div>
+
+        <h2 class="stats-section-title">热门规格 Top 20（分类 × 分辨率）</h2>
+        <p class="stats-note">统计粒度为「分类 × 分辨率 × 关键词」请求签名，不跟踪到单张图片文件。</p>
+        <div class="stats-table">
+          <table>
+            <thead><tr><th class="rank">#</th><th>分类</th><th>分辨率</th><th class="num">请求</th><th class="num">浏览</th></tr></thead>
+            <tbody>
+            {{ range $i, $s := .TopSpecs }}
+              <tr>
+                <td class="rank">{{ add1 $i }}</td>
+                <td>{{ $s.TypeLabel }}{{ if $s.Keyword }} <em style="opacity:.5">{{ $s.Keyword }}</em>{{ end }}</td>
+                <td>{{ $s.Resolution }}</td>
+                <td class="num">{{ formatNumber $s.Requests }}</td>
+                <td class="num">{{ formatNumber $s.Views }}</td>
+              </tr>
+            {{ end }}
+            </tbody>
+          </table>
+        </div>
+
+        <p class="stats-note" style="margin-top:24px"><a href="{{ .HomeURL }}">← 返回首页</a></p>
+    </main>
+    <script defer src="/assets/main.min.js?v={{ .Site.AssetVersion }}"></script>
+</body>
+</html>
